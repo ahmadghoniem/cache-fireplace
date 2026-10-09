@@ -1,219 +1,155 @@
 // Pixel art as strings: one character per pixel, '.' is transparent.
 // One terminal cell holds two pixels stacked (▀ with fg on top, bg below).
-// Each object has named designs; the tuner offers every name, LOOK picks one.
+// Clawd and the flames follow the cooking scene in Claude Code's own binary (cc-plugin-mods-guide):
+// the same 13-wide body, four legs, 1 x 2 eyes and palette. The far-side shade is from Clawd-Basketball.gif.
 
 export const PAL: Record<string, number> = {
-  X: 0xd97757, // Clawd
-  x: 0xa8523a, // Clawd, shut eyes and folded arms
-  E: 0x000000, // eyes
-  W: 0x8b5a2b, // bark
-  w: 0x5e3a1a, // bark, shadow side
-  o: 0xd9b77e, // cut end of a log
-  K: 0x3b3b42, // iron
-  k: 0x26262b, // iron, shadow
-  h: 0x5c5c66, // iron, highlight
-  r: 0x8a8a95, // rivet
-  P: 0x4a4a52, // pipe
-  D: 0x140b09, // inside the furnace: the fire draws over it
-  B: 0xc9a227, // brass
-  c: 0x1d1d22, // coal
-  g: 0x6a6a78, // coal, shine
-  p: 0xeeeae0, // paper
-  q: 0x9a958c, // paper, ruled line
-  S: 0x4a7fc1, // scarf
-  s: 0x2f5d96, // scarf, shade
+  C: 0xd77757, // Clawd
+  c: 0xbe684d, // Clawd, the side turned away
+  E: 0x141414, // eyes
+  B: 0x4a7fc1, // scarf
+  b: 0x2f5d96, // scarf, shade
+  R: 0x94a0b0, // stone, lit edge: mantel and hearth
+  P: 0x5f6b7a, // stone
+  H: 0x465160, // stone, shade
+  D: 0x1c1310, // inside the fireplace
+  k: 0x33190f, // firebrick
+  I: 0x2a2a30, // grate
+  L: 0x8b5a2b, // bark
+  l: 0x5e3a1a, // bark, shade
+  W: 0xbe8e5c, // cut end of a log
+  a: 0x5b5550, // ash
+  F: 0xf59e0b, // flame
+  f: 0xef4444, // flame, red
+  y: 0xfde047, // flame tip, spark
+  s: 0x9aa3ad, // smoke
+  G: 0x6b7280, // floor
 }
 
 export type Art = string[]
 export const artWidth = (art: Art) => Math.max(0, ...art.map(l => l.length))
 
-// Clawd's poses: 12 x 8 except where noted
-export type ClawdPose = 'front' | 'right' | 'left' | 'blink' | 'crouch' | 'up' | 'warm' | 'hug' | 'sleep'
-export type ClawdArt = Record<ClawdPose, Art>
-// The firebox is every 'D' pixel inside `mouth`; sparks and smoke leave from `pipe`
-export type FurnaceArt = { art: Art; mouth: { x: number; y: number; w: number; h: number }; pipe: { x: number; w: number } }
-// What Clawd throws: one piece in the hands, and the pile it comes from
-export type ThrownArt = { held: Art; pile: Art }
-
-export const CLAWDS: Record<string, ClawdArt> = {
-  // From Clawd-Still.png and the mascot GIFs
-  'built-in': {
-    front: [
-      '..XXXXXXXX..',
-      '..XEXXXXEX..',
-      'XXXXXXXXXXXX',
-      'XXXXXXXXXXXX',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '..X.X..X.X..',
-      '..X.X..X.X..',
-    ],
-    // Looking toward the furnace
-    right: [
-      '..XXXXXXXX..',
-      '..XXEXXXXE..',
-      'XXXXXXXXXXXX',
-      'XXXXXXXXXXXX',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '..X.X..X.X..',
-      '..X.X..X.X..',
-    ],
-    // Looking at the pile
-    left: [
-      '..XXXXXXXX..',
-      '..EXXXXEXX..',
-      'XXXXXXXXXXXX',
-      'XXXXXXXXXXXX',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '..X.X..X.X..',
-      '..X.X..X.X..',
-    ],
-    blink: [
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      'XXXXXXXXXXXX',
-      'XXXXXXXXXXXX',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '..X.X..X.X..',
-      '..X.X..X.X..',
-    ],
-    // Squatting to pick something up: 7 tall
-    crouch: [
-      '..XXXXXXXX..',
-      '..EXXXXEXX..',
-      'XXXXXXXXXXXX',
-      'XXXXXXXXXXXX',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '.XX.X..X.XX.',
-    ],
-    // Arms up, holding something overhead
-    up: [
-      'XX........XX',
-      'XXXXXXXXXXXX',
-      'XXXEXXXXEXXX',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '..X.X..X.X..',
-      '..X.X..X.X..',
-    ],
-    // Both arms reaching toward the furnace: 13 wide
-    warm: [
-      '..XXXXXXXX...',
-      '..XXEXXXXE...',
-      '..XXXXXXXXXXX',
-      '..XXXXXXXXXXX',
-      '..XXXXXXXX...',
-      '..XXXXXXXX...',
-      '..X.X..X.X...',
-      '..X.X..X.X...',
-    ],
-    // Arms folded in against the cold
-    hug: [
-      '..XXXXXXXX..',
-      '..XEXXXXEX..',
-      '..XXXXXXXX..',
-      '.XxxxxxxxxX.',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '..X.X..X.X..',
-      '..X.X..X.X..',
-    ],
-    // Sitting, eyes shut: 7 tall
-    sleep: [
-      '..XXXXXXXX..',
-      '..xxXXXXxx..',
-      'XXXXXXXXXXXX',
-      'XXXXXXXXXXXX',
-      '..XXXXXXXX..',
-      '..XXXXXXXX..',
-      '.XX.X..X.XX.',
-    ],
-  },
+// Clawd faces the fireplace on his right; the column away from it is a shade darker.
+// 17 x 10: arms 2 out at rows 4-5, legs at 2, 4, 12 and 14.
+export const CLAWD = {
+  stand: [
+    '..cCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCC..',
+    '..cCCECCCCCCCEC..',
+    '..cCCECCCCCCCEC..',
+    'cCCCCCCCCCCCCCCCC',
+    'cCCCCCCCCCCCCCCCC',
+    '..cCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCC..',
+    '..c.C.......C.C..',
+    '..c.C.......C.C..',
+  ],
+  // Looking out of the band, the way the welcome banner's Clawd does
+  front: [
+    '..CCCCCCCCCCCCC..',
+    '..CCCCCCCCCCCCC..',
+    '..CCECCCCCCCECC..',
+    '..CCECCCCCCCECC..',
+    'CCCCCCCCCCCCCCCCC',
+    'CCCCCCCCCCCCCCCCC',
+    '..CCCCCCCCCCCCC..',
+    '..CCCCCCCCCCCCC..',
+    '..C.C.......C.C..',
+    '..C.C.......C.C..',
+  ],
+  // Reaching down to the woodpile: a pixel lower, knees out, one arm down, eyes squeezed (Basketball frame 4)
+  crouch: [
+    '.................',
+    '..cCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCC..',
+    '..cCEECCCCCCEEC..',
+    'cCCCCCCCCCCCCCC..',
+    'cCCCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCCCC',
+    '..cCCCCCCCCCCCCCC',
+    '.c.C.........C.C.',
+  ],
+  // The throwing arm up, eyes up after the log (19 wide)
+  toss: [
+    '..cCCCCCCCCCCCC....',
+    '..cCCECCCCCCCEC....',
+    '..cCCECCCCCCCEC..CC',
+    '..cCCCCCCCCCCCC.CC.',
+    'cCCCCCCCCCCCCCCCC..',
+    'cCCCCCCCCCCCCCC....',
+    '..cCCCCCCCCCCCC....',
+    '..cCCCCCCCCCCCC....',
+    '..c.C.......C.C....',
+    '..c.C.......C.C....',
+  ],
+  // In the air, legs trailing as steps (Clawd-Lurking.gif); drawn a pixel up
+  hop: [
+    '..cCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCC..',
+    '..cCCECCCCCCCEC..',
+    '..cCCECCCCCCCEC..',
+    'cCCCCCCCCCCCCCCCC',
+    'cCCCCCCCCCCCCCCCC',
+    '..cCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCC..',
+    '..c.C.......C.C..',
+    '.c.C.......C.C...',
+  ],
 }
+export type ClawdPose = keyof typeof CLAWD
+// The same pose with the eyes shut
+export const shut = (art: Art): Art => art.map(l => l.replaceAll('E', 'C'))
 
-// Worn over a standing pose
+// Worn when the fire is low or out, over `stand` and `front`
 export const SCARF: Art = [
-  '............',
-  '............',
-  '..SSSSSSSS..',
-  '...s........',
-  '...S........',
-  '...s........',
+  '',
+  '',
+  '',
+  '',
+  '..bBBBBBBBBBBBB..',
+  '..bbbbbbbbbbbBB..',
+  '............bB...',
+  '............Bb...',
 ]
 
-export const FURNACES: Record<string, FurnaceArt> = {
-  // A small pot-belly furnace with an arched mouth (12 x 10)
-  'pot-belly': {
-    art: [
-      '.......PP...',
-      '..hhhhhPPh..',
-      '.hKKKKKKKKKh',
-      '.KKkDDDDkKKK',
-      '.KKDDDDDDKrK',
-      '.KKDDDDDDKBK',
-      '.KKDDDDDDKKK',
-      '.KKKKKKKKKKK',
-      '.hhhhhhhhhhh',
-      '..KK.....KK.',
-    ],
-    mouth: { x: 3, y: 3, w: 6, h: 4 },
-    pipe: { x: 7, w: 2 },
-  },
-  // A square box stove, wider mouth, pipe straight up (12 x 10)
-  'box stove': {
-    art: [
-      '........PP..',
-      '........PP..',
-      '.hhhhhhhPPh.',
-      '.KKKKKKKKKKK',
-      '.KkDDDDDDkKK',
-      '.KDDDDDDDDBK',
-      '.KDDDDDDDDKK',
-      '.KkkkkkkkkKK',
-      '.hhhhhhhhhhh',
-      '.KK......KK.',
-    ],
-    mouth: { x: 2, y: 4, w: 8, h: 3 },
-    pipe: { x: 8, w: 2 },
-  },
-}
+// The pile Clawd takes from, and the one log he carries
+export const WOODPILE: Art = [
+  '.LLLLW',
+  '.llllW',
+  'LLLLW.',
+  'llllW.',
+  '.LLLLW',
+  '.llllW',
+]
+export const LOG: Art = ['LLLW', 'lllW']
 
-export const THROWN: Record<string, ThrownArt> = {
-  log: {
-    held: ['WWWo', 'wwwo'],
-    pile: [
-      'WWWo.',
-      'wwwo.',
-      '.WWWo',
-      '.wwwo',
-      'WWWo.',
-      'wwwo.',
-    ],
-  },
-  coal: {
-    held: ['gc', 'cc'],
-    // A scuttle heaped with coal
-    pile: [
-      '.cgc.',
-      'cgccg',
-      'KKKKK',
-      'hKKKh',
-      '.KKK.',
-    ],
-  },
-  // Pages of the prompt
-  page: {
-    held: ['pqp', 'ppp'],
-    pile: [
-      '.ppp.',
-      'pqqqp',
-      'ppppp',
-      'qqqqq',
-    ],
-  },
-}
+// A stone fireplace, front on: mantel, arched opening, firebrick, two logs on a grate, hearth (20 x 12)
+export const FIREPLACE: Art = [
+  'RRRRRRRRRRRRRRRRRRRR',
+  'HHHHHHHHHHHHHHHHHHHH',
+  '.PPPPPRRRRRRRRPPPPH.',
+  '.PPPRRDDDDDDDDRRPPH.',
+  '.PPRDDkkDkkkDkkDRPH.',
+  '.PRDkkDkkkDkkkDkDRH.',
+  '.PRDkkkDkkkDkkkDDRH.',
+  '.PRDkDkkkDkkkDkkDRH.',
+  '.PRDLLLLLWLLLLLWDRH.',
+  '.PRIlllllIlllllIIRH.',
+  'RRRRRRRRRRRRRRRRRRRR',
+  'HHHHHHHHHHHHHHHHHHHH',
+]
+// Where the fire sits in FIREPLACE: 12 wide over the logs, its base on row 7
+export const BED = { x: 4, y: 7, w: 12 }
+// The logs' top row, which glows as embers and turns to ash
+export const LOGS_ROW = 8
+
+// The flame tips of the cooking scene, one per frame; under them a checker of F and f
+export const TIPS = [
+  '..F.y..y.F..', 'y..y.F..F.F.', '.F..F.F..F.y', 'F.F..F.y..y.',
+  '.F.y..y.F..F', '..y.F..F.F..', 'F..F.F..F.y.', '.F..F.y..y.F',
+  'F.y..y.F..F.', '.y.F..F.F..F', '..F.F..F.y..', 'F..F.y..y.F.',
+  '.y..y.F..F.F', 'y.F..F.F..F.', '.F.F..F.y..y', 'y..y.F..F.F.',
+]
+// Smoke, from the cooking scene's puffs, smallest last
+export const PUFFS: Art[] = [['.ss.', 'ssss'], ['ss'], ['s']]

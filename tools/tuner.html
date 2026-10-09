@@ -2,278 +2,201 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Clawd furnace tuner</title>
+<title>Clawd fireplace</title>
 <style>
-  :root { --bg: #161514; --panel: #1f1e1c; --line: #34322f; --text: #e8e4dc; --dim: #8a8580; --clay: #d97757; }
+  body { --bg: #161514; --panel: #1f1e1c; --line: #34322f; --text: #e8e4dc; --dim: #8a8580; --clay: #d97757; }
+  body[data-theme=light] { --bg: #f0eee6; --panel: #faf9f5; --line: #d6d1c4; --text: #282828; --dim: #77726b; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, sans-serif; }
-  header { display: flex; align-items: baseline; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
   h1 { font-size: 15px; margin: 0; color: var(--clay); }
-  #status { font-family: Consolas, monospace; color: var(--dim); }
+  label { display: flex; align-items: center; gap: 6px; color: var(--dim); }
+  output, #status { font-family: Consolas, monospace; color: var(--dim); min-width: 52px; }
   #keys { margin-left: auto; color: var(--dim); }
   kbd { border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; font-family: Consolas, monospace; }
-  #stage { padding: 12px 16px; overflow-x: auto; }
-  canvas { display: block; image-rendering: pixelated; }
-  #strip { display: flex; flex-wrap: wrap; gap: 12px; padding: 0 16px 12px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; cursor: pointer; }
-  .card:hover { border-color: var(--clay); }
-  .card span { display: block; color: var(--dim); margin-bottom: 4px; }
-  #panels { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; padding: 0 16px 24px; align-items: start; }
-  fieldset { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; margin: 0; padding: 8px 10px 10px; min-width: 0; }
-  legend { padding: 0 6px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
-  legend label { font-weight: 400; color: var(--dim); }
-  fieldset.override legend label { color: var(--clay); }
-  .row { display: grid; grid-template-columns: 78px 1fr 52px; gap: 8px; align-items: center; margin: 5px 0; }
-  .row > span:first-child { color: var(--dim); }
-  .row output { font-family: Consolas, monospace; text-align: right; color: var(--dim); }
-  .choices { display: flex; flex-wrap: wrap; gap: 4px; }
-  button { background: #2a2826; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 3px 9px; font: inherit; cursor: pointer; }
+  button, select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 3px 9px; font: inherit; cursor: pointer; }
   button:hover { border-color: var(--dim); }
-  button.on { background: var(--clay); border-color: var(--clay); color: #1a1a1a; }
-  button.big { width: 100%; padding: 6px; margin-top: 4px; font-weight: 600; }
-  select, input[type=text] { background: #2a2826; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; font: inherit; width: 100%; }
-  input[type=range] { width: 100%; accent-color: var(--clay); }
-  textarea { width: 100%; height: 190px; background: #121110; color: var(--text); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.4 Consolas, monospace; resize: vertical; }
-  .note { color: var(--dim); font-size: 12px; margin: 4px 0 0; }
+  button#send { background: var(--clay); border-color: var(--clay); color: #1a1a1a; font-weight: 600; }
+  input[type=range] { width: 200px; accent-color: var(--clay); }
+  #stage { padding: 14px 16px 6px; overflow-x: auto; }
+  #status { padding: 0 16px 12px; }
+  canvas { display: block; }
+  #gallery { display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 16px 24px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+  .card span { display: block; color: var(--dim); margin-bottom: 4px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Clawd furnace tuner</h1>
-  <span id="status"></span>
-  <span id="keys"><kbd>p</kbd> send prompt &nbsp; <kbd>space</kbd> play/pause &nbsp; <kbd>.</kbd> step</span>
+  <h1>Clawd fireplace</h1>
+  <label>time left <input id="left" type="range" min="-15" max="60" step="0.1" value="35"><output id="leftOut"></output></label>
+  <label>cache <select id="ttl"><option value="60">1 hour</option><option value="5">5 min</option></select></label>
+  <label>speed <select id="speed"><option value="1">1x</option><option value="30">30x</option><option value="300">300x</option></select></label>
+  <label>terminal <input id="width" type="range" min="30" max="160" value="120"><output id="widthOut"></output></label>
+  <button id="send">send prompt</button>
+  <button id="unlit">unlit</button>
+  <button id="play">pause</button>
+  <button id="theme">dark / light</button>
+  <span id="keys"><kbd>p</kbd> send prompt &nbsp; <kbd>space</kbd> play/pause</span>
 </header>
-<section id="stage"><canvas id="term"></canvas></section>
-<section id="strip"></section>
-<section id="panels"></section>
+<section id="stage"><canvas id="live"></canvas></section>
+<div id="status"></div>
+<section id="gallery"></section>
 <script>
 (() => {
-  // hooks/look.ts
-  var LOOK = {
-    size: 75,
-    clawd: "built-in",
-    furnace: "pot-belly",
-    thrown: "log",
-    burning: "steady",
-    cold: "shiver",
-    expired: "ice",
-    bar: { style: "loud", width: 10, layout: "stack", title: "cache", color: "leitstand" }
-  };
-
   // hooks/sprites.ts
   var PAL = {
-    X: 14251863,
-    x: 11031098,
-    E: 0,
-    W: 9132587,
-    w: 6175258,
-    o: 14268286,
-    K: 3881794,
-    k: 2500139,
-    h: 6052966,
-    r: 9079445,
-    P: 4868690,
-    D: 1313545,
-    B: 13214247,
-    c: 1908002,
-    g: 6974072,
-    p: 15657696,
-    q: 10130828,
-    S: 4882369,
-    s: 3104150
+    C: 14120791,
+    c: 12478541,
+    E: 1315860,
+    B: 4882369,
+    b: 3104150,
+    R: 9740464,
+    P: 6253434,
+    H: 4608352,
+    D: 1839888,
+    k: 3348751,
+    I: 2763312,
+    L: 9132587,
+    l: 6175258,
+    W: 12488284,
+    a: 5985616,
+    F: 16096779,
+    f: 15680580,
+    y: 16638023,
+    s: 10134445,
+    G: 7041664
   };
   var artWidth = (art) => Math.max(0, ...art.map((l) => l.length));
-  var CLAWDS = {
-    "built-in": {
-      front: [
-        "..XXXXXXXX..",
-        "..XEXXXXEX..",
-        "XXXXXXXXXXXX",
-        "XXXXXXXXXXXX",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        "..X.X..X.X..",
-        "..X.X..X.X.."
-      ],
-      right: [
-        "..XXXXXXXX..",
-        "..XXEXXXXE..",
-        "XXXXXXXXXXXX",
-        "XXXXXXXXXXXX",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        "..X.X..X.X..",
-        "..X.X..X.X.."
-      ],
-      left: [
-        "..XXXXXXXX..",
-        "..EXXXXEXX..",
-        "XXXXXXXXXXXX",
-        "XXXXXXXXXXXX",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        "..X.X..X.X..",
-        "..X.X..X.X.."
-      ],
-      blink: [
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        "XXXXXXXXXXXX",
-        "XXXXXXXXXXXX",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        "..X.X..X.X..",
-        "..X.X..X.X.."
-      ],
-      crouch: [
-        "..XXXXXXXX..",
-        "..EXXXXEXX..",
-        "XXXXXXXXXXXX",
-        "XXXXXXXXXXXX",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        ".XX.X..X.XX."
-      ],
-      up: [
-        "XX........XX",
-        "XXXXXXXXXXXX",
-        "XXXEXXXXEXXX",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        "..X.X..X.X..",
-        "..X.X..X.X.."
-      ],
-      warm: [
-        "..XXXXXXXX...",
-        "..XXEXXXXE...",
-        "..XXXXXXXXXXX",
-        "..XXXXXXXXXXX",
-        "..XXXXXXXX...",
-        "..XXXXXXXX...",
-        "..X.X..X.X...",
-        "..X.X..X.X..."
-      ],
-      hug: [
-        "..XXXXXXXX..",
-        "..XEXXXXEX..",
-        "..XXXXXXXX..",
-        ".XxxxxxxxxX.",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        "..X.X..X.X..",
-        "..X.X..X.X.."
-      ],
-      sleep: [
-        "..XXXXXXXX..",
-        "..xxXXXXxx..",
-        "XXXXXXXXXXXX",
-        "XXXXXXXXXXXX",
-        "..XXXXXXXX..",
-        "..XXXXXXXX..",
-        ".XX.X..X.XX."
-      ]
-    }
+  var CLAWD = {
+    stand: [
+      "..cCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCC..",
+      "..cCCECCCCCCCEC..",
+      "..cCCECCCCCCCEC..",
+      "cCCCCCCCCCCCCCCCC",
+      "cCCCCCCCCCCCCCCCC",
+      "..cCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCC..",
+      "..c.C.......C.C..",
+      "..c.C.......C.C.."
+    ],
+    front: [
+      "..CCCCCCCCCCCCC..",
+      "..CCCCCCCCCCCCC..",
+      "..CCECCCCCCCECC..",
+      "..CCECCCCCCCECC..",
+      "CCCCCCCCCCCCCCCCC",
+      "CCCCCCCCCCCCCCCCC",
+      "..CCCCCCCCCCCCC..",
+      "..CCCCCCCCCCCCC..",
+      "..C.C.......C.C..",
+      "..C.C.......C.C.."
+    ],
+    crouch: [
+      ".................",
+      "..cCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCC..",
+      "..cCEECCCCCCEEC..",
+      "cCCCCCCCCCCCCCC..",
+      "cCCCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCCCC",
+      "..cCCCCCCCCCCCCCC",
+      ".c.C.........C.C."
+    ],
+    toss: [
+      "..cCCCCCCCCCCCC....",
+      "..cCCECCCCCCCEC....",
+      "..cCCECCCCCCCEC..CC",
+      "..cCCCCCCCCCCCC.CC.",
+      "cCCCCCCCCCCCCCCCC..",
+      "cCCCCCCCCCCCCCC....",
+      "..cCCCCCCCCCCCC....",
+      "..cCCCCCCCCCCCC....",
+      "..c.C.......C.C....",
+      "..c.C.......C.C...."
+    ],
+    hop: [
+      "..cCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCC..",
+      "..cCCECCCCCCCEC..",
+      "..cCCECCCCCCCEC..",
+      "cCCCCCCCCCCCCCCCC",
+      "cCCCCCCCCCCCCCCCC",
+      "..cCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCC..",
+      "..c.C.......C.C..",
+      ".c.C.......C.C..."
+    ]
   };
+  var shut = (art) => art.map((l) => l.replaceAll("E", "C"));
   var SCARF = [
-    "............",
-    "............",
-    "..SSSSSSSS..",
-    "...s........",
-    "...S........",
-    "...s........"
+    "",
+    "",
+    "",
+    "",
+    "..bBBBBBBBBBBBB..",
+    "..bbbbbbbbbbbBB..",
+    "............bB...",
+    "............Bb..."
   ];
-  var FURNACES = {
-    "pot-belly": {
-      art: [
-        ".......PP...",
-        "..hhhhhPPh..",
-        ".hKKKKKKKKKh",
-        ".KKkDDDDkKKK",
-        ".KKDDDDDDKrK",
-        ".KKDDDDDDKBK",
-        ".KKDDDDDDKKK",
-        ".KKKKKKKKKKK",
-        ".hhhhhhhhhhh",
-        "..KK.....KK."
-      ],
-      mouth: { x: 3, y: 3, w: 6, h: 4 },
-      pipe: { x: 7, w: 2 }
-    },
-    "box stove": {
-      art: [
-        "........PP..",
-        "........PP..",
-        ".hhhhhhhPPh.",
-        ".KKKKKKKKKKK",
-        ".KkDDDDDDkKK",
-        ".KDDDDDDDDBK",
-        ".KDDDDDDDDKK",
-        ".KkkkkkkkkKK",
-        ".hhhhhhhhhhh",
-        ".KK......KK."
-      ],
-      mouth: { x: 2, y: 4, w: 8, h: 3 },
-      pipe: { x: 8, w: 2 }
-    }
-  };
-  var THROWN = {
-    log: {
-      held: ["WWWo", "wwwo"],
-      pile: [
-        "WWWo.",
-        "wwwo.",
-        ".WWWo",
-        ".wwwo",
-        "WWWo.",
-        "wwwo."
-      ]
-    },
-    coal: {
-      held: ["gc", "cc"],
-      pile: [
-        ".cgc.",
-        "cgccg",
-        "KKKKK",
-        "hKKKh",
-        ".KKK."
-      ]
-    },
-    page: {
-      held: ["pqp", "ppp"],
-      pile: [
-        ".ppp.",
-        "pqqqp",
-        "ppppp",
-        "qqqqq"
-      ]
-    }
-  };
+  var WOODPILE = [
+    ".LLLLW",
+    ".llllW",
+    "LLLLW.",
+    "llllW.",
+    ".LLLLW",
+    ".llllW"
+  ];
+  var LOG = ["LLLW", "lllW"];
+  var FIREPLACE = [
+    "RRRRRRRRRRRRRRRRRRRR",
+    "HHHHHHHHHHHHHHHHHHHH",
+    ".PPPPPRRRRRRRRPPPPH.",
+    ".PPPRRDDDDDDDDRRPPH.",
+    ".PPRDDkkDkkkDkkDRPH.",
+    ".PRDkkDkkkDkkkDkDRH.",
+    ".PRDkkkDkkkDkkkDDRH.",
+    ".PRDkDkkkDkkkDkkDRH.",
+    ".PRDLLLLLWLLLLLWDRH.",
+    ".PRIlllllIlllllIIRH.",
+    "RRRRRRRRRRRRRRRRRRRR",
+    "HHHHHHHHHHHHHHHHHHHH"
+  ];
+  var BED = { x: 4, y: 7, w: 12 };
+  var LOGS_ROW = 8;
+  var TIPS = [
+    "..F.y..y.F..",
+    "y..y.F..F.F.",
+    ".F..F.F..F.y",
+    "F.F..F.y..y.",
+    ".F.y..y.F..F",
+    "..y.F..F.F..",
+    "F..F.F..F.y.",
+    ".F..F.y..y.F",
+    "F.y..y.F..F.",
+    ".y.F..F.F..F",
+    "..F.F..F.y..",
+    "F..F.y..y.F.",
+    ".y..y.F..F.F",
+    "y.F..F.F..F.",
+    ".F.F..F.y..y",
+    "y..y.F..F.F."
+  ];
+  var PUFFS = [[".ss.", "ssss"], ["ss"], ["s"]];
 
   // hooks/scene.ts
   var COLD_MS = 10 * 60 * 1000;
-  var T_CROUCH = 300;
+  var T_PICK = 375;
   var T_LIFT = 750;
-  var T_IMPACT = 1150;
-  var THROW_MS = 1900;
+  var T_RELEASE = 1000;
+  var T_IMPACT = 1375;
+  var THROW_MS = 2000;
+  var FLAME_MS = 160;
   var DEFAULT = 16777216;
   var NONE = -1;
-  var ICE = 12576511;
-  var SNOW = [15661055, 12180725];
-  var ASH = 4867394;
-  var FLAME = [5902856, 10231562, 13910031, 15759384, 16364083, 16770688];
-  var TONE = { clay: 14251863, warn: 13666846, bad: 14242639, track: 9078144 };
-  var CHOICES = {
-    size: [75, 60],
-    burning: ["steady", "plume", "warm"],
-    cold: ["shiver", "scarf", "huddle"],
-    expired: ["ice", "asleep", "smoke"],
-    style: ["loud", "quiet"],
-    layout: ["stack", "line"],
-    title: ["cache", "state", "none"],
-    color: ["leitstand", "fire"]
-  };
-  var POSES = ["front", "watch", "warm", "shiver", "scarf", "huddle", "ice", "asleep", "pale"];
+  var TONE = { clay: 14251863, warn: 13666846, bad: 14242639, track: 6249560, dim: 9078144 };
   var coldMs = (ttlMs) => Math.min(COLD_MS, ttlMs / 3);
   function phase({ now, lastRequestAt, ttlMs }) {
     if (lastRequestAt === null)
@@ -286,12 +209,10 @@
     return { kind: "burning", remaining };
   }
   function intensity(p, ttlMs) {
+    if (p.kind !== "burning")
+      return 0;
     const cold = coldMs(ttlMs);
-    if (p.kind === "burning")
-      return 0.4 + 0.6 * ((p.remaining - cold) / Math.max(1, ttlMs - cold));
-    if (p.kind === "cold")
-      return 0.1 + 0.22 * (1 - p.cold);
-    return 0;
+    return 0.4 + 0.6 * ((p.remaining - cold) / Math.max(1, ttlMs - cold));
   }
   function clock(ms) {
     const s = Math.max(0, Math.ceil(ms / 1000));
@@ -305,1075 +226,443 @@
     const ch = (s) => Math.round(lerp(c1 >> s & 255, c2 >> s & 255, t)) << s;
     return ch(16) | ch(8) | ch(0);
   };
-  function derive(inp, look) {
+  var hash = (a, b) => {
+    let t = Math.imul(a ^ 2654435769, 2246822507) ^ Math.imul(b + 1663821227, 3266489909);
+    t ^= t >>> 15;
+    t = Math.imul(t, 739982445);
+    return ((t ^ t >>> 13) >>> 0) / 4294967296;
+  };
+  function derive(inp) {
     const p = phase(inp);
     const since = inp.throwAt === null ? Infinity : inp.now - inp.throwAt;
     const throwMs = since >= 0 && since < THROW_MS ? since : null;
-    const flare = since >= T_IMPACT ? 0.75 * Math.exp(-(since - T_IMPACT) / 1400) : 0;
-    const fire = clamp(intensity(p, inp.ttlMs) + flare);
-    const sparks = fire > 0.5 ? (fire - 0.45) * (look.burning === "steady" ? 0.6 : 0.9) : 0;
-    const s = { kind: p.kind, fire, sparks, smoke: 0, throwMs, pose: "front", chill: 0, snow: 0, fraction: 0, value: "" };
+    const flare = since >= T_IMPACT ? 0.8 * Math.exp(-(since - T_IMPACT) / 1600) : 0;
+    const s = { kind: p.kind, fire: clamp(intensity(p, inp.ttlMs) + flare), cold: 0, throwMs, fraction: 0, value: "" };
     if (p.kind === "burning") {
-      s.pose = look.burning === "warm" ? "warm" : "watch";
-      s.smoke = look.burning === "plume" ? 0.25 + 0.4 * fire : 0;
       s.fraction = p.remaining / inp.ttlMs;
       s.value = clock(p.remaining);
     } else if (p.kind === "cold") {
-      s.pose = look.cold;
-      s.smoke = 0.6;
-      s.snow = p.cold * 0.6;
-      s.chill = p.cold * (look.cold === "scarf" ? 0.3 : 0.5);
+      s.cold = p.cold;
       s.fraction = p.remaining / inp.ttlMs;
       s.value = clock(p.remaining);
     } else if (p.kind === "expired") {
-      s.pose = look.expired === "smoke" ? "pale" : look.expired;
-      s.smoke = look.expired === "smoke" ? 0.6 : 0.25;
-      s.snow = look.expired === "ice" ? 0.7 : look.expired === "asleep" ? 0.5 : 0;
-      s.chill = look.expired === "ice" ? 0.55 : 0.4;
-      s.value = look.bar.title === "state" ? clock(p.since) : "out";
+      s.value = "out";
+    } else {
+      s.value = "–";
     }
-    if (throwMs !== null)
-      s.chill = 0;
     return s;
   }
-  var STATE_WORD = { unlit: "unlit", burning: "burning", cold: "cooling", expired: "expired" };
-  var DOT = "·";
+  var FULL = "▓";
   var RAMP = ["░", "░", "▒", "▓"];
   var fill = (pct, width) => Math.max(0, Math.min(width, Math.round(pct / 100 * width)));
-  function meter(pct, width) {
-    const n = fill(pct, width);
-    return ["━".repeat(n), "─".repeat(width - n)];
-  }
   function loudMeter(pct, width) {
     const n = fill(pct, width);
     const fade = n === width ? [] : [...RAMP].reverse().slice(0, Math.min(2, n));
-    return ["▓".repeat(n - fade.length) + fade.join(""), DOT.repeat(width - n)];
+    return [FULL.repeat(n - fade.length) + fade.join(""), "·".repeat(width - n)];
   }
-  function pick(table, name) {
-    return table[name] ?? Object.values(table)[0];
+  var fit = (s, w) => s.length > w ? s.slice(0, w) : s.padEnd(w);
+  var ROW = { state: 9, name: 6, bar: 12, value: 4 };
+  var ROW_COLUMNS = 2 + ROW.state + ROW.name + ROW.bar + 1 + ROW.value;
+  var MARK = {
+    unlit: ["·", "unlit", TONE.dim],
+    burning: ["✱", "burning", TONE.clay],
+    cold: ["!", "cooling", TONE.warn],
+    expired: ["!", "expired", TONE.bad]
+  };
+  function row(s) {
+    const [mark, word, tone] = MARK[s.kind];
+    const [body, rest] = loudMeter(s.fraction * 100, ROW.bar);
+    return [
+      [`${mark} ${fit(word, ROW.state)}`, tone],
+      [fit("cache", ROW.name), DEFAULT],
+      [body, tone],
+      [rest, TONE.track],
+      [` ${s.value.padStart(ROW.value)}`, TONE.dim]
+    ];
   }
-  function geometry(look) {
-    const clawd = pick(CLAWDS, look.clawd);
-    const furnace = pick(FURNACES, look.furnace);
-    const thrown = pick(THROWN, look.thrown);
-    const stageH = look.size === 75 ? 12 : 10;
-    const homeX = artWidth(thrown.pile) + 1;
-    const furnaceX = homeX + 14;
-    const stageW = furnaceX + artWidth(furnace.art);
-    const labelW = look.bar.layout === "stack" ? look.bar.width : look.bar.width + 5;
-    const gap = 1;
-    return {
-      clawd,
-      furnace,
-      thrown,
-      stageH,
-      stageW,
-      homeX,
-      furnaceX,
-      labelW,
-      gap,
-      throwX: homeX + 1,
-      clawdY: stageH - 8,
-      furnaceY: stageH - furnace.art.length,
-      columns: labelW + gap + stageW,
-      rows: stageH / 2
-    };
-  }
-  function lineColumns(look) {
-    return (look.bar.title === "none" ? 0 : 8) + look.bar.width + 5;
-  }
-  function rng(seed) {
-    let a = seed >>> 0;
-    return () => {
-      a = a + 1831565813 >>> 0;
-      let t = a;
-      t = Math.imul(t ^ t >>> 15, t | 1);
-      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
-  }
-  function createScene(seed = 7) {
-    const rnd = rng(seed);
-    let heat = new Float32Array(0);
-    let parts = [];
-    let burstDone = false;
-    let frameNo = 0;
-    let g;
-    let px = new Int32Array(0);
-    let glyph = new Int32Array(0);
-    let glyphFg = new Int32Array(0);
+  var STAGE = (() => {
+    const pileX = 18;
+    const fireX = pileX + artWidth(WOODPILE);
+    const w = fireX + artWidth(FIREPLACE);
+    const h = FIREPLACE.length;
+    return { w, h, clawdX: 0, clawdY: h - 1 - CLAWD.stand.length, pileX, pileY: h - 1 - WOODPILE.length, fireX };
+  })();
+  var GAP = 2;
+  var COLUMNS = ROW_COLUMNS + GAP + STAGE.w;
+  var ROWS = STAGE.h / 2;
+  function frame(s, now) {
+    const { w, h } = STAGE;
+    const px = new Int32Array(w * h).fill(NONE);
     const put = (x, y, c) => {
       x = Math.round(x);
       y = Math.round(y);
-      if (x >= 0 && y >= 0 && x < g.stageW && y < g.stageH)
-        px[y * g.stageW + x] = c;
+      if (x >= 0 && y >= 0 && x < w && y < h)
+        px[y * w + x] = c;
     };
-    const sprite = (art, x, y, tint) => {
+    const sprite = (art, x, y, color = (ch) => PAL[ch]) => {
       art.forEach((line, j) => {
         for (let i = 0;i < line.length; i++) {
-          const c = PAL[line[i]];
+          const c = color(line[i]);
           if (c !== undefined)
-            put(x + i, y + j, tint ? tint(c) : c);
+            put(x + i, y + j, c);
         }
       });
     };
-    const text = (col, row, s, fg) => {
-      [...s].forEach((ch, i) => {
-        if (col + i < 0 || col + i >= g.columns)
-          return;
-        glyph[row * g.columns + col + i] = ch.codePointAt(0);
-        glyphFg[row * g.columns + col + i] = fg;
-      });
-    };
-    function resize(look) {
-      const next = geometry(look);
-      const isNew = !g || next.stageW !== g.stageW || next.stageH !== g.stageH || next.columns !== g.columns || next.furnace !== g.furnace;
-      if (!g || next.furnace !== g.furnace)
-        heat = new Float32Array(next.furnace.mouth.w * next.furnace.mouth.h);
-      if (isNew) {
-        px = new Int32Array(next.stageW * next.stageH);
-        glyph = new Int32Array(next.columns * next.rows);
-        glyphFg = new Int32Array(next.columns * next.rows);
-        parts = [];
-      }
-      g = next;
+    const tick = Math.floor(now / FLAME_MS);
+    for (let x = 0;x < STAGE.fireX; x++)
+      put(x, h - 1, PAL.G);
+    sprite(WOODPILE, STAGE.pileX, STAGE.pileY);
+    drawFireplace(s, tick, sprite, put);
+    drawClawd(s, now, sprite);
+    const cells = new Uint32Array(COLUMNS * ROWS * 3).fill(0);
+    for (let i = 0;i < COLUMNS * ROWS; i++) {
+      cells[i * 3] = 32;
+      cells[i * 3 + 1] = DEFAULT;
+      cells[i * 3 + 2] = DEFAULT;
     }
-    function stepFire(level) {
-      const { w, h } = g.furnace.mouth;
-      const decay = lerp(0.7, 0.2, level);
-      for (let y = 0;y < h - 1; y++) {
-        for (let x = 0;x < w; x++) {
-          const sx = clamp(x + Math.round(rnd() * 2 - 1), 0, w - 1);
-          heat[y * w + x] = Math.max(0, heat[(y + 1) * w + sx] - rnd() * decay);
-        }
+    let col = 0;
+    for (const [text, fg] of row(s)) {
+      for (const ch of text) {
+        const at = ((ROWS - 1) * COLUMNS + col++) * 3;
+        cells[at] = ch.codePointAt(0);
+        cells[at + 1] = fg;
       }
+    }
+    for (let r = 0;r < ROWS; r++) {
       for (let x = 0;x < w; x++) {
-        const edge = 1 - 0.45 * Math.abs((x - (w - 1) / 2) / ((w - 1) / 2)) ** 2;
-        const ember = level < 0.25 ? rnd() < 0.5 ? 1 : 0.35 : 1;
-        const fuel = level + 0.3 * clamp((level - 0.3) / 0.4);
-        heat[(h - 1) * w + x] = level <= 0 ? 0 : clamp(fuel) * edge * ember * (0.75 + 0.25 * rnd());
-      }
-    }
-    function drawFire(level) {
-      const { mouth, art } = g.furnace;
-      const ox = g.furnaceX + mouth.x;
-      const oy = g.furnaceY + mouth.y;
-      const isInside = (x, y) => art[mouth.y + y]?.[mouth.x + x] === "D";
-      const glow = mix(PAL.w, 13910031, clamp(level * 1.4));
-      for (let x = 1;x < mouth.w - 1; x++) {
-        if (isInside(x, mouth.h - 1))
-          put(ox + x, oy + mouth.h - 1, x === 2 ? PAL.o : x % 2 === 0 ? glow : PAL.w);
-      }
-      if (level <= 0) {
-        for (let x = 1;x < mouth.w - 1; x += 2)
-          if (isInside(x, mouth.h - 2))
-            put(ox + x, oy + mouth.h - 2, ASH);
-        return;
-      }
-      for (let y = 0;y < mouth.h; y++) {
-        for (let x = 0;x < mouth.w; x++) {
-          const v = heat[y * mouth.w + x];
-          if (v < 0.14 || !isInside(x, y))
-            continue;
-          put(ox + x, oy + y, FLAME[Math.min(FLAME.length - 1, Math.floor((v - 0.14) / 0.8 * FLAME.length))]);
-        }
-      }
-    }
-    function spawn(s) {
-      const { pipe } = g.furnace;
-      const pipeX = g.furnaceX + pipe.x + Math.floor(rnd() * pipe.w);
-      const pipeY = g.furnaceY - 1;
-      if (rnd() < s.sparks)
-        parts.push({ x: pipeX, y: pipeY, life: 0, max: 1 + Math.floor(rnd() * 3), dx: 0, kind: "spark" });
-      if (frameNo % 2 === 0 && rnd() < s.smoke * 0.6)
-        parts.push({ x: pipeX, y: pipeY, life: 0, max: 5, dx: 0, kind: "smoke" });
-      if (rnd() < s.snow)
-        parts.push({ x: Math.floor(rnd() * g.stageW), y: 0, life: 0, max: g.stageH + 2, dx: 0, kind: "snow" });
-    }
-    function burst() {
-      const { mouth, pipe } = g.furnace;
-      for (let i = 0;i < 5; i++) {
-        parts.push({ x: g.furnaceX + mouth.x + 1 + Math.floor(rnd() * (mouth.w - 2)), y: g.furnaceY + mouth.y - 1, life: 0, max: 2 + Math.floor(rnd() * 2), dx: rnd() < 0.5 ? -1 : 1, kind: "spark" });
-      }
-      for (let i = 0;i < 2; i++)
-        parts.push({ x: g.furnaceX + pipe.x + i, y: g.furnaceY - 1 - i, life: 0, max: 2 + i, dx: 0, kind: "spark" });
-    }
-    function moveParticles() {
-      parts = parts.filter((p) => {
-        p.life += 1;
-        if (p.kind === "spark") {
-          p.y -= 1;
-          if (p.dx && p.life % 2 === 0)
-            p.x += p.dx;
-          else if (rnd() < 0.3)
-            p.x += rnd() < 0.5 ? -1 : 1;
-        } else if (p.kind === "smoke") {
-          if (p.life % 2 === 0) {
-            p.y -= 1;
-            p.x += 1;
-          }
-        } else {
-          p.y += 1;
-          if (rnd() < 0.25)
-            p.x += rnd() < 0.5 ? -1 : 1;
-        }
-        return p.life <= p.max && p.y >= 0 && p.y < g.stageH;
-      });
-    }
-    function drawParticles(isSnow) {
-      const { mouth } = g.furnace;
-      const mx = g.furnaceX + mouth.x;
-      const my = g.furnaceY + mouth.y;
-      for (const p of parts) {
-        if (p.kind === "snow" !== isSnow)
+        const at = (r * COLUMNS + ROW_COLUMNS + GAP + x) * 3;
+        const top = px[r * 2 * w + x];
+        const bottom = px[(r * 2 + 1) * w + x];
+        if (top === NONE && bottom === NONE)
           continue;
-        if (p.kind === "spark")
-          put(p.x, p.y, FLAME[clamp(5 - Math.floor(p.life / p.max * 3), 2, 5)]);
-        else if (p.kind === "smoke")
-          put(p.x, p.y, mix(9078144, 4867394, p.life / p.max));
-        else if (!(p.x >= mx && p.x < mx + mouth.w && p.y >= my && p.y < my + mouth.h))
-          put(p.x, p.y, SNOW[p.life % 2]);
-      }
-    }
-    function drawThrow(t, art, thrown) {
-      const { homeX, throwX, clawdY, furnaceX, furnaceY } = g;
-      const { mouth } = g.furnace;
-      const held = thrown.held;
-      const hw = artWidth(held);
-      if (t < T_CROUCH) {
-        sprite(art.crouch, homeX, clawdY + 1);
-        sprite(held, homeX - hw + 1, g.stageH - 3);
-      } else if (t < T_LIFT) {
-        const k = (t - T_CROUCH) / (T_LIFT - T_CROUCH);
-        const x = Math.round(lerp(homeX, throwX, k));
-        const hop = k > 0.25 && k < 0.75 ? 1 : 0;
-        sprite(art.up, x, clawdY - hop);
-        sprite(held, x + 6 - Math.ceil(hw / 2), clawdY - hop - held.length);
-      } else if (t < T_IMPACT) {
-        const k = (t - T_LIFT) / (T_IMPACT - T_LIFT);
-        sprite(art.right, throwX, clawdY);
-        const fromX = throwX + 6 - Math.ceil(hw / 2);
-        const fromY = clawdY - held.length;
-        const toX = furnaceX + mouth.x + Math.floor((mouth.w - hw) / 2);
-        const toY = furnaceY + mouth.y + mouth.h - held.length - 1;
-        sprite(held, lerp(fromX, toX, k), lerp(fromY, toY, k) - 3 * Math.sin(Math.PI * k));
-      } else {
-        const k = (t - T_IMPACT) / (THROW_MS - T_IMPACT);
-        const x = Math.round(lerp(throwX, homeX, k));
-        const hop = k > 0.1 && k < 0.35 || k > 0.6 && k < 0.85 ? 1 : 0;
-        sprite(hop ? art.blink : art.right, x, clawdY - hop);
-      }
-    }
-    function drawClawd(s, now) {
-      const art = g.clawd;
-      const { homeX, clawdY, stageH } = g;
-      if (s.throwMs !== null)
-        return drawThrow(s.throwMs, art, g.thrown);
-      const tint = (c) => s.chill > 0 && c === PAL.X ? mix(c, ICE, s.chill) : c;
-      const isBlink = now % 4100 < 160;
-      const shiver = (every) => frameNo % every === 0 ? frameNo % (every * 2) === 0 ? 1 : -1 : 0;
-      const breath = (x) => {
-        if (s.chill > 0.1 && now % 1800 < 450) {
-          put(x + 12, clawdY + 1, SNOW[0]);
-          put(x + 13, clawdY, SNOW[1]);
-        }
-      };
-      switch (s.pose) {
-        case "front":
-          return sprite(isBlink ? art.blink : art.front, homeX, clawdY, tint);
-        case "watch":
-        case "pale":
-          return sprite(isBlink ? art.blink : art.right, homeX, clawdY, tint);
-        case "warm": {
-          const glow = 0.15 + 0.35 * s.fire;
-          sprite(isBlink ? art.blink : art.warm, homeX, clawdY, (c) => c === PAL.X ? mix(c, 16364083, glow * 0.5) : c);
-          return;
-        }
-        case "shiver": {
-          const dx = shiver(2);
-          sprite(isBlink ? art.blink : art.right, homeX + dx, clawdY, tint);
-          return breath(homeX + dx);
-        }
-        case "scarf": {
-          const dx = shiver(4);
-          sprite(isBlink ? art.blink : art.right, homeX + dx, clawdY, tint);
-          sprite(SCARF, homeX + dx, clawdY);
-          return breath(homeX + dx);
-        }
-        case "huddle": {
-          const x = g.furnaceX - 12 + shiver(2);
-          sprite(art.hug, x, clawdY, tint);
-          return breath(x);
-        }
-        case "ice": {
-          for (let y = clawdY - 1;y < stageH; y++) {
-            for (let x = homeX - 1;x <= homeX + 12; x++) {
-              const isEdge = y === clawdY - 1 || x === homeX - 1 || x === homeX + 12;
-              put(x, y, isEdge ? 14086655 : 7315392);
-            }
-          }
-          sprite(art.blink, homeX, clawdY, (c) => c === PAL.X ? mix(c, ICE, 0.55) : c);
-          put(homeX + 1, clawdY, 16777215);
-          return;
-        }
-        case "asleep": {
-          sprite(art.sleep, homeX, clawdY + 1, tint);
-          const at = Math.floor(now / 700) % 3;
-          const col = g.labelW + g.gap + homeX + 10;
-          const head = Math.floor((clawdY + 1) / 2);
-          if (at >= 1 && head - 1 >= 0)
-            text(col, head - 1, "z", TONE.track);
-          if (at >= 2 && head - 2 >= 0)
-            text(col + 1, head - 2, "Z", TONE.track);
-          return;
+        if (bottom === NONE) {
+          cells[at] = 9600;
+          cells[at + 1] = top;
+        } else if (top === NONE) {
+          cells[at] = 9604;
+          cells[at + 1] = bottom;
+        } else {
+          cells[at] = 9600;
+          cells[at + 1] = top;
+          cells[at + 2] = bottom;
         }
       }
     }
-    function toneOf(s, look) {
-      if (s.kind === "unlit")
-        return TONE.track;
-      if (look.bar.color === "leitstand")
-        return s.kind === "burning" ? TONE.clay : s.kind === "cold" ? TONE.warn : TONE.bad;
-      if (s.kind === "burning")
-        return FLAME[clamp(Math.floor(s.fire * 6), 3, 5)];
-      return s.kind === "cold" ? mix(15759384, ICE, 0.6) : ICE;
-    }
-    function bar(s, look) {
-      return (look.bar.style === "loud" ? loudMeter : meter)(s.fraction * 100, look.bar.width);
-    }
-    function title(s, look) {
-      return look.bar.title === "cache" ? "cache" : look.bar.title === "state" ? STATE_WORD[s.kind] : "";
-    }
-    function label(s, look) {
-      const tone = toneOf(s, look);
-      const [body, rest] = bar(s, look);
-      const last = g.rows - 1;
-      const words = title(s, look);
-      if (look.bar.layout === "stack") {
-        const value = s.value.slice(0, Math.max(0, g.labelW - words.length - 1));
-        text(0, last - 1, words, tone);
-        text(g.labelW - value.length, last - 1, value, TONE.track);
-        text(0, last, body, tone);
-        text(body.length, last, rest, TONE.track);
-      } else {
-        text(0, last - 1, words, tone);
-        text(0, last, body, tone);
-        text(body.length, last, rest, TONE.track);
-        text(look.bar.width, last, ` ${s.value.padStart(4)}`, TONE.track);
-      }
-    }
-    function frame(s, look, now) {
-      resize(look);
-      frameNo += 1;
-      px.fill(NONE);
-      glyph.fill(0);
-      if (s.throwMs === null || s.throwMs < T_IMPACT)
-        burstDone = false;
-      else if (!burstDone) {
-        burstDone = true;
-        burst();
-      }
-      stepFire(s.fire);
-      spawn(s);
-      moveParticles();
-      const pile = g.thrown.pile;
-      sprite(pile, 0, g.stageH - pile.length);
-      sprite(g.furnace.art, g.furnaceX, g.furnaceY);
-      drawFire(s.fire);
-      drawParticles(true);
-      drawClawd(s, now);
-      drawParticles(false);
-      label(s, look);
-      return { cells: compose(), columns: g.columns, rows: g.rows };
-    }
-    function compose() {
-      const { columns, rows, stageW, labelW, gap } = g;
-      const cells = new Uint32Array(columns * rows * 3);
-      for (let row = 0;row < rows; row++) {
-        for (let col = 0;col < columns; col++) {
-          const at = (row * columns + col) * 3;
-          const ch = glyph[row * columns + col];
-          if (ch) {
-            cells[at] = ch;
-            cells[at + 1] = glyphFg[row * columns + col];
-            cells[at + 2] = DEFAULT;
-            continue;
-          }
-          const sx = col - labelW - gap;
-          const top = sx >= 0 ? px[row * 2 * stageW + sx] : NONE;
-          const bottom = sx >= 0 ? px[(row * 2 + 1) * stageW + sx] : NONE;
-          if (top === NONE && bottom === NONE) {
-            cells[at] = 32;
-            cells[at + 1] = DEFAULT;
-            cells[at + 2] = DEFAULT;
-          } else if (bottom === NONE) {
-            cells[at] = 9600;
-            cells[at + 1] = top;
-            cells[at + 2] = DEFAULT;
-          } else if (top === NONE) {
-            cells[at] = 9604;
-            cells[at + 1] = bottom;
-            cells[at + 2] = DEFAULT;
-          } else {
-            cells[at] = 9600;
-            cells[at + 1] = top;
-            cells[at + 2] = bottom;
-          }
+    return { cells, columns: COLUMNS, rows: ROWS };
+  }
+  function drawFireplace(s, tick, sprite, put) {
+    const fx = STAGE.fireX;
+    const lit = s.kind === "burning" || s.fire > 0;
+    const glow = lit ? 0.25 + 0.45 * s.fire : s.kind === "cold" ? 0.18 * (1 - s.cold) : 0;
+    sprite(FIREPLACE, fx, 0, (ch) => {
+      if (ch === "k")
+        return mix(PAL.k, 9058850, glow);
+      if (ch === "D")
+        return mix(PAL.D, 4857360, glow * 0.6);
+      return PAL[ch];
+    });
+    for (let x = BED.x - 1;x < BED.x + BED.w + 1; x++)
+      put(fx + x, 10, mix(PAL.R, 16096779, glow * 0.45));
+    const x0 = fx + BED.x;
+    if (lit) {
+      const rows = s.fire >= 0.9 ? 4 : s.fire >= 0.7 ? 3 : 2;
+      for (let r = 0;r < rows; r++) {
+        const y = BED.y - r;
+        const inset = r === 0 ? 0 : Math.min(4, r + 1);
+        for (let i = inset;i < BED.w - inset; i++) {
+          let ch;
+          if (r === 0)
+            ch = (i + tick) % 2 === 0 ? "F" : "f";
+          else if (r === rows - 1)
+            ch = TIPS[(tick + r * 5) % TIPS.length][i];
+          else
+            ch = hash(tick, r * 16 + i) < 0.7 ? (i + tick + r) % 2 === 0 ? "F" : "y" : ".";
+          if (ch !== ".")
+            put(x0 + i, y, PAL[ch]);
         }
       }
-      return cells;
-    }
-    function line(s, look) {
-      const columns = lineColumns(look);
-      const tone = toneOf(s, look);
-      const [body, rest] = bar(s, look);
-      const words = look.bar.title === "none" ? "" : title(s, look).padEnd(8);
-      const parts = [[words, tone], [body, tone], [rest, TONE.track], [` ${s.value.padStart(4)}`, TONE.track]];
-      const cells = new Uint32Array(columns * 3);
-      let c = 0;
-      for (const [str, fg] of parts) {
-        for (const ch of str) {
-          if (c >= columns)
-            break;
-          cells[c * 3] = ch.codePointAt(0);
-          cells[c * 3 + 1] = fg;
-          cells[c * 3 + 2] = DEFAULT;
-          c++;
+      if (s.fire > 0.9) {
+        for (let k = 0;k < 3; k++) {
+          if (hash(tick, 100 + k) < 0.5)
+            put(x0 + 2 + Math.floor(hash(tick, 200 + k) * (BED.w - 4)), BED.y - rows - Math.floor(hash(tick, 300 + k) * 2), PAL.y);
         }
       }
-      for (;c < columns; c++) {
-        cells[c * 3] = 32;
-        cells[c * 3 + 1] = DEFAULT;
+      return;
+    }
+    if (s.kind === "cold") {
+      for (let i = 0;i < BED.w; i++) {
+        if (hash(i, 7) < 0.75 - 0.6 * s.cold)
+          put(x0 + i, LOGS_ROW, PAL[(i + tick) % 3 === 0 ? "F" : "f"]);
+      }
+      smoke(x0 + 5, 0.5, tick, sprite);
+      return;
+    }
+    if (s.kind === "expired") {
+      for (let i = 0;i < BED.w; i++)
+        if (i % 6 !== 5)
+          put(x0 + i, LOGS_ROW, PAL.a);
+      smoke(x0 + 4, 1, tick, sprite);
+    }
+  }
+  function smoke(x, strength, tick, sprite) {
+    const t = tick % 16;
+    if (t >= 10)
+      return;
+    const y = LOGS_ROW - 1 - Math.floor(t / 2);
+    if (y < 3)
+      return;
+    const puff = PUFFS[Math.min(PUFFS.length - 1, Math.floor(t / 4))];
+    const color = mix(PAL.D, PAL.s, strength * (1 - t / 14));
+    sprite(puff, x + (t >> 2), y - puff.length + 1, (ch) => ch === "s" ? color : undefined);
+  }
+  function drawClawd(s, now, sprite) {
+    const { clawdX: x, clawdY: y } = STAGE;
+    if (s.throwMs !== null)
+      return drawThrow(Math.floor(s.throwMs / 125) * 125, sprite);
+    const isBlink = now % 4100 < 160;
+    const isFront = now % 17000 > 15200;
+    const art = isFront ? CLAWD.front : CLAWD.stand;
+    sprite(isBlink ? shut(art) : art, x, y);
+    if (s.kind === "cold" || s.kind === "expired")
+      sprite(SCARF, x, y);
+  }
+  function drawThrow(t, sprite) {
+    const { clawdX: x, clawdY: y, fireX } = STAGE;
+    if (t < T_PICK) {
+      sprite(CLAWD.crouch, x, y);
+    } else if (t < T_LIFT) {
+      sprite(CLAWD.stand, x, y);
+      sprite(LOG, x + 14, y + 3);
+    } else if (t < T_RELEASE) {
+      sprite(CLAWD.toss, x, y);
+      sprite(LOG, x + 16, y);
+    } else if (t < T_IMPACT) {
+      const k = (t - T_RELEASE) / (T_IMPACT - T_RELEASE);
+      sprite(k < 0.5 ? CLAWD.toss : CLAWD.stand, x, y);
+      sprite(LOG, lerp(x + 16, fireX + BED.x + 4, k), lerp(y, BED.y, k * k));
+    } else {
+      const k = (t - T_IMPACT) / (THROW_MS - T_IMPACT);
+      if (k < 0.4)
+        sprite(shut(CLAWD.hop), x, y - 1);
+      else
+        sprite(CLAWD.stand, x, y);
+    }
+  }
+  function line(s) {
+    const cells = new Uint32Array(ROW_COLUMNS * 3);
+    let c = 0;
+    for (const [text, fg] of row(s)) {
+      for (const ch of text) {
+        cells[c * 3] = ch.codePointAt(0);
+        cells[c * 3 + 1] = fg;
         cells[c * 3 + 2] = DEFAULT;
+        c++;
       }
-      return { cells, columns, rows: 1 };
     }
-    return { frame, line };
+    return { cells, columns: ROW_COLUMNS, rows: 1 };
   }
 
   // tools/tuner/main.ts
   var MIN = 60000;
   var FRAME_MS = 125;
   var DEFAULT2 = 16777216;
-  var STORE = "clawd-furnace-tuner";
   var MARK_COLUMNS = 5;
-  var KINDS = ["unlit", "burning", "cold", "expired"];
-  var clone = (v) => JSON.parse(JSON.stringify(v));
-  var DEFAULTS = {
-    look: clone(LOOK),
-    view: { columns: 120, cell: 9, theme: "dark", neighbour: false, outline: true },
-    clock: { ttlMin: 60, rate: 1, speed: 1, left: 35 * MIN },
-    furnace: { follow: true, fire: 0.7, sparks: 0.2, smoke: 0 },
-    thrown: { follow: true, throwMs: THROW_MS },
-    clawd: { follow: true, pose: "watch", chill: 0 },
-    weather: { follow: true, snow: 0 },
-    bar: { follow: true, kind: "burning", fraction: 0.6, value: "35m" }
-  };
-  function load() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORE) ?? "null");
-      if (!saved)
-        return clone(DEFAULTS);
-      const s = clone(DEFAULTS);
-      for (const k of Object.keys(s))
-        s[k] = { ...s[k], ...saved[k] };
-      s.look.bar = { ...DEFAULTS.look.bar, ...saved.look?.bar };
-      return s;
-    } catch {
-      return clone(DEFAULTS);
-    }
-  }
-  var S = load();
-  var save = () => {
-    S.clock.left = lastRequestAt === null ? null : remaining();
-    localStorage.setItem(STORE, JSON.stringify(S));
-  };
-  var now = 1790000000000;
-  var lastRequestAt = S.clock.left === null ? null : now - (S.clock.ttlMin * MIN - S.clock.left);
-  var pendingRequest = null;
-  var throwAt = null;
-  var isPlaying = true;
-  var ttl = () => S.clock.ttlMin * MIN;
-  var remaining = () => lastRequestAt === null ? 0 : ttl() - (now - lastRequestAt);
-  var inputs = () => ({ now, lastRequestAt, ttlMs: ttl(), throwAt });
-  var setLeft = (left) => {
-    lastRequestAt = left === null ? null : now - (ttl() - left);
-    pendingRequest = null;
-  };
-  var coldMs2 = () => Math.min(COLD_MS, ttl() / 3);
-  var PHASE_LEFT = {
-    unlit: () => null,
-    burning: () => ttl() * 0.58,
-    cold: () => coldMs2() * 0.4,
-    expired: () => -Math.min(10 * MIN, ttl())
-  };
-  var sendPrompt = () => {
-    throwAt = now;
-    pendingRequest = now + 300;
-  };
-  function effective(s) {
-    const o = { ...s };
-    if (!S.furnace.follow)
-      Object.assign(o, { fire: S.furnace.fire, sparks: S.furnace.sparks, smoke: S.furnace.smoke });
-    if (!S.thrown.follow)
-      o.throwMs = S.thrown.throwMs >= THROW_MS ? null : S.thrown.throwMs;
-    if (!S.clawd.follow)
-      Object.assign(o, { pose: S.clawd.pose, chill: S.clawd.chill });
-    if (!S.weather.follow)
-      o.snow = S.weather.snow;
-    if (!S.bar.follow)
-      Object.assign(o, { kind: S.bar.kind, fraction: S.bar.fraction, value: S.bar.value });
-    return o;
-  }
+  var T0 = 1790000000000;
   var THEMES = {
     dark: { bg: "#0c0c0c", fg: "#dcdcdc", dim: "#8a8580", rule: "#3a3836" },
     light: { bg: "#faf9f5", fg: "#282828", dim: "#8a8580", rule: "#cfcac0" }
   };
+  var theme = localStorage.getItem("clawd-fireplace-theme") === "light" ? "light" : "dark";
   var css = (n) => "#" + (n & 16777215).toString(16).padStart(6, "0");
-  function sizeCanvas(c, w, h) {
+  var SHADES = { 9617: 0.25, 9618: 0.5, 9619: 0.75 };
+  var BAYER = [[0, 2], [3, 1]];
+  function size(canvas, w, h) {
     const dpr = window.devicePixelRatio || 1;
-    if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
-      c.width = Math.round(w * dpr);
-      c.height = Math.round(h * dpr);
-      c.style.width = `${w}px`;
-      c.style.height = `${h}px`;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
     }
-    const ctx = c.getContext("2d");
+    const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = THEMES[theme].bg;
+    ctx.fillRect(0, 0, w, h);
+    ctx.textBaseline = "middle";
     return ctx;
   }
-  function painter(ctx, cw) {
+  function cells(ctx, d, col0, row0, cw) {
     const ch = cw * 2;
-    const theme = THEMES[S.view.theme];
-    ctx.font = `${Math.round(ch * 0.78)}px "Cascadia Mono", Consolas, Menlo, monospace`;
-    ctx.textBaseline = "middle";
-    const text = (col, row, s, color = theme.fg) => {
-      ctx.fillStyle = color;
-      [...s].forEach((c, i) => ctx.fillText(c, (col + i) * cw, row * ch + ch / 2 + 1));
-    };
-    const cells = (d, col0, row0) => {
-      for (let r = 0;r < d.rows; r++) {
-        for (let c = 0;c < d.columns; c++) {
-          const at = (r * d.columns + c) * 3;
-          const cp = d.cells[at], fg = d.cells[at + 1], bg = d.cells[at + 2];
-          const x = (col0 + c) * cw, y = (row0 + r) * ch;
-          const fgc = fg & DEFAULT2 ? theme.fg : css(fg);
-          if (!(bg & DEFAULT2)) {
-            ctx.fillStyle = css(bg);
-            ctx.fillRect(x, y, cw, ch);
-          }
-          if (cp === 9600) {
-            ctx.fillStyle = fgc;
-            ctx.fillRect(x, y, cw, ch / 2);
-          } else if (cp === 9604) {
-            ctx.fillStyle = fgc;
-            ctx.fillRect(x, y + ch / 2, cw, ch / 2);
-          } else if (cp !== 32 && cp !== 0)
-            text(col0 + c, row0 + r, String.fromCodePoint(cp), fgc);
+    ctx.font = `${Math.round(ch * 0.72)}px "Cascadia Mono", Consolas, Menlo, "Segoe UI Symbol", monospace`;
+    for (let r = 0;r < d.rows; r++) {
+      for (let c = 0;c < d.columns; c++) {
+        const at = (r * d.columns + c) * 3;
+        const cp = d.cells[at], fg = d.cells[at + 1], bg = d.cells[at + 2];
+        const x = (col0 + c) * cw, y = (row0 + r) * ch;
+        if (!(bg & DEFAULT2)) {
+          ctx.fillStyle = css(bg);
+          ctx.fillRect(x, y, cw, ch);
         }
-      }
-    };
-    return { ch, theme, text, cells };
-  }
-  var term = document.getElementById("term");
-  var scene = createScene();
-  var lastState = null;
-  var lastDrawn = null;
-  var lastSize = null;
-  var TRANSCRIPT = [
-    ["> fix the failing test in parser.test.ts", "dim"],
-    ["", ""],
-    ["● The test expected a trailing newline. Fixed in parser.ts:42; all 18 tests pass.", "fg"],
-    ["", ""]
-  ];
-  var NEIGHBOUR = [
-    ["●", " ctx      ", "━━━━━━━━", "──────", "   41%"],
-    ["●", " 5h       ", "━━━━", "──────────", "   27%"]
-  ];
-  function frame() {
-    const look = S.look;
-    const s = effective(derive(inputs(), look));
-    const body = S.view.columns - MARK_COLUMNS;
-    const g = geometry(look);
-    const size = body >= g.columns ? "full" : body >= lineColumns(look) ? "line" : null;
-    lastState = s;
-    lastSize = size;
-    lastDrawn = size === "full" ? scene.frame(s, look, now) : size === "line" ? scene.line(s, look) : null;
-  }
-  function paintTerminal() {
-    const cw = S.view.cell;
-    const cols = S.view.columns;
-    const d = lastDrawn;
-    const neighbourRows = S.view.neighbour ? NEIGHBOUR.length : 0;
-    const bandRows = Math.max(d?.rows ?? 0, d ? neighbourRows : 0);
-    const rows = TRANSCRIPT.length + bandRows + 1 + 4;
-    const ctx = sizeCanvas(term, cols * cw, rows * cw * 2);
-    const p = painter(ctx, cw);
-    ctx.fillStyle = p.theme.bg;
-    ctx.fillRect(0, 0, cols * cw, rows * p.ch);
-    let row = 0;
-    for (const [line, tone] of TRANSCRIPT)
-      p.text(0, row++, line.slice(0, cols), tone === "dim" ? p.theme.dim : p.theme.fg);
-    const bandTop = row;
-    if (d) {
-      const body = cols - MARK_COLUMNS;
-      if (S.view.neighbour) {
-        NEIGHBOUR.forEach(([mark, label, full, empty, value], i) => {
-          const r = bandTop + bandRows - neighbourRows + i;
-          let c = 0;
-          for (const [s, color] of [[mark, css(TONE.clay)], [label, p.theme.fg], [full, css(TONE.clay)], [empty, css(TONE.track)], [value, p.theme.dim]]) {
-            p.text(c, r, s.slice(0, Math.max(0, body - d.columns - c)), color);
-            c += s.length;
+        ctx.fillStyle = fg & DEFAULT2 ? THEMES[theme].fg : css(fg);
+        const shade = SHADES[cp];
+        if (cp === 9600)
+          ctx.fillRect(x, y, cw, ch / 2);
+        else if (cp === 9604)
+          ctx.fillRect(x, y + ch / 2, cw, ch / 2);
+        else if (shade !== undefined) {
+          const dot = Math.max(1, Math.round(cw / 4.5));
+          for (let j = 0;j * dot < ch; j++) {
+            for (let i = 0;i * dot < cw; i++) {
+              if (BAYER[j % 2][i % 2] / 4 < shade)
+                ctx.fillRect(x + i * dot, y + j * dot, dot, dot);
+            }
           }
-        });
+        } else if (cp !== 32 && cp !== 0)
+          ctx.fillText(String.fromCodePoint(cp), x, y + ch / 2 + 1);
       }
-      const col0 = body - d.columns;
-      const row0 = bandTop + bandRows - d.rows;
-      p.cells(d, col0, row0);
-      p.text(cols - 4, bandTop, "[-]", p.theme.dim);
-      if (S.view.outline) {
-        ctx.save();
-        ctx.strokeStyle = "#4fa86b";
-        ctx.setLineDash([3, 3]);
-        ctx.strokeRect(col0 * cw + 0.5, row0 * p.ch + 0.5, d.columns * cw - 1, d.rows * p.ch - 1);
-        ctx.restore();
-      }
-      row += bandRows;
-    }
-    if (S.view.outline) {
-      ctx.fillStyle = S.view.theme === "dark" ? "rgba(79,168,107,0.10)" : "rgba(79,168,107,0.14)";
-      ctx.fillRect(0, row * p.ch, cols * cw, p.ch);
-      const note = "engine's blank row";
-      p.text(Math.max(0, cols - note.length - 1), row, note, "#4fa86b");
-    }
-    row += 1;
-    p.text(0, row++, "─".repeat(cols), p.theme.rule);
-    p.text(0, row, "❯ ", p.theme.fg);
-    ctx.fillStyle = p.theme.fg;
-    ctx.fillRect(2 * cw, row * p.ch + 2, cw, p.ch - 4);
-    row++;
-    p.text(0, row++, "─".repeat(cols), p.theme.rule);
-    p.text(2, row, "? for shortcuts", p.theme.dim);
-  }
-  var strip = document.getElementById("strip");
-  var cards = KINDS.map((kind) => {
-    const canvas = document.createElement("canvas");
-    const card = document.createElement("div");
-    card.className = "card";
-    card.title = `Set the clock to ${kind}`;
-    const label = document.createElement("span");
-    label.textContent = kind === "cold" ? "cold (last 10m)" : kind;
-    card.append(label, canvas);
-    card.onclick = () => {
-      setLeft(PHASE_LEFT[kind]());
-      sync();
-    };
-    strip.append(card);
-    return { kind, canvas, scene: createScene(KINDS.indexOf(kind) + 3) };
-  });
-  function paintStrip() {
-    const cw = Math.max(5, Math.round(S.view.cell * 0.8));
-    for (const card of cards) {
-      const left = PHASE_LEFT[card.kind]();
-      const inp = { now, lastRequestAt: left === null ? null : now - (ttl() - left), ttlMs: ttl(), throwAt: null };
-      const d = card.scene.frame(derive(inp, S.look), S.look, now);
-      const ctx = sizeCanvas(card.canvas, d.columns * cw, d.rows * cw * 2);
-      const p = painter(ctx, cw);
-      ctx.fillStyle = p.theme.bg;
-      ctx.fillRect(0, 0, d.columns * cw, d.rows * p.ch);
-      p.cells(d, 0, 0);
     }
   }
-  function el(tag, props = {}, ...kids) {
-    const e = document.createElement(tag);
-    Object.assign(e, props);
-    e.append(...kids);
-    return e;
+  function band(inp, width) {
+    const room = width - MARK_COLUMNS;
+    if (room >= COLUMNS)
+      return frame(derive(inp), inp.now);
+    if (room >= ROW_COLUMNS)
+      return line(derive(inp));
+    return null;
   }
-  var syncs = [];
-  var sync = () => {
-    for (const f of syncs)
-      f();
+  var $ = (id) => document.getElementById(id);
+  var live = $("live");
+  var left = $("left");
+  var leftOut = $("leftOut");
+  var widthIn = $("width");
+  var widthOut = $("widthOut");
+  var ttlIn = $("ttl");
+  var speedIn = $("speed");
+  var status = $("status");
+  var now = T0;
+  var ttlMs = 60 * MIN;
+  var lastRequestAt = now - 25 * MIN;
+  var pendingRequest = null;
+  var throwAt = null;
+  var isPlaying = true;
+  left.oninput = () => {
+    lastRequestAt = now - (ttlMs - Number(left.value) * MIN);
+    pendingRequest = null;
   };
-  var panels = document.getElementById("panels");
-  function panel(title, follower, note) {
-    const set = el("fieldset");
-    const legend = el("legend", {}, title);
-    if (follower) {
-      const box = el("input", { type: "checkbox" });
-      box.onchange = () => {
-        follower.follow = box.checked;
-        save();
-      };
-      legend.append(el("label", {}, box, " follow clock"));
-      syncs.push(() => {
-        box.checked = follower.follow;
-        set.classList.toggle("override", !follower.follow);
-      });
-    }
-    set.append(legend);
-    if (note)
-      set.append(el("p", { className: "note" }, note));
-    panels.append(set);
-    return set;
-  }
-  function slider(parent, label, o) {
-    const input = el("input", { type: "range", min: String(o.min), max: String(o.max), step: String(o.step) });
-    const out = el("output");
-    let isDragging = false;
-    input.onpointerdown = () => {
-      isDragging = true;
-    };
-    input.onpointerup = () => {
-      isDragging = false;
-    };
-    input.oninput = () => {
-      o.set(Number(input.value));
-      if (o.follower)
-        o.follower.follow = false;
-      save();
-      sync();
-    };
-    syncs.push(() => {
-      const v = o.get();
-      if (!isDragging)
-        input.value = String(v);
-      out.textContent = o.show ? o.show(v) : v.toFixed(2);
-    });
-    parent.append(el("div", { className: "row" }, el("span", {}, label), input, out));
-  }
-  function choices(parent, label, options, get, set, follower) {
-    const box = el("div", { className: "choices" });
-    const buttons = options.map((v) => {
-      const b = el("button", { textContent: String(v) });
-      b.onclick = () => {
-        set(v);
-        if (follower)
-          follower.follow = false;
-        save();
-        sync();
-      };
-      box.append(b);
-      return b;
-    });
-    syncs.push(() => buttons.forEach((b, i) => b.classList.toggle("on", options[i] === get())));
-    parent.append(el("div", { className: "row" }, el("span", {}, label), box, el("span")));
-  }
-  var pct = (v) => `${Math.round(v * 100)}%`;
-  {
-    const p = panel("Clock", undefined, "Sets the cache window the way the mod sees it; every object panel follows it until you move one of its controls.");
-    choices(p, "jump to", KINDS, () => lastState ? phase(inputs()).kind : "unlit", (k) => setLeft(PHASE_LEFT[k]()));
-    slider(p, "time left", {
-      min: -30,
-      max: 60,
-      step: 0.25,
-      get: () => lastRequestAt === null ? 60 : remaining() / MIN,
-      set: (v) => setLeft(v * MIN),
-      show: (v) => lastRequestAt === null ? "unlit" : v >= 0 ? clock(v * MIN) : `-${clock(-v * MIN)}`
-    });
-    const timeLeft = p.querySelector("input[type=range]");
-    syncs.push(() => {
-      timeLeft.min = String(-S.clock.ttlMin / 2);
-      timeLeft.max = String(S.clock.ttlMin);
-      timeLeft.step = String(S.clock.ttlMin / 240);
-    });
-    choices(p, "cache", [60, 5], () => S.clock.ttlMin, (v) => {
-      const left = lastRequestAt === null ? null : remaining() / ttl() * v * MIN;
-      S.clock.ttlMin = v;
-      setLeft(left);
-    });
-    choices(p, "clock rate", [1, 60, 600], () => S.clock.rate, (v) => {
-      S.clock.rate = v;
-    });
-    choices(p, "animation", [0.25, 0.5, 1, 2], () => S.clock.speed, (v) => {
-      S.clock.speed = v;
-    });
-    const play = el("button", { className: "big" });
-    play.onclick = () => {
-      isPlaying = !isPlaying;
-      sync();
-    };
-    const step = el("button", { textContent: "step one frame" });
-    step.onclick = () => {
-      isPlaying = false;
-      advance(FRAME_MS);
-      frame();
-      sync();
-    };
-    syncs.push(() => {
-      play.textContent = isPlaying ? "pause" : "play";
-    });
-    const send = el("button", { className: "big", textContent: "Send a prompt (Clawd throws)" });
-    send.onclick = () => {
-      sendPrompt();
-      isPlaying = true;
-    };
-    p.append(send, el("div", { className: "row" }, el("span"), play, step));
-  }
-  {
-    const p = panel("Concepts", undefined, "One look per state. Picking one jumps the clock to that state.");
-    choices(p, "size", CHOICES.size, () => S.look.size, (v) => {
-      S.look.size = v;
-    });
-    choices(p, "burning", CHOICES.burning, () => S.look.burning, (v) => {
-      S.look.burning = v;
-      setLeft(PHASE_LEFT.burning());
-    });
-    choices(p, "cold", CHOICES.cold, () => S.look.cold, (v) => {
-      S.look.cold = v;
-      setLeft(PHASE_LEFT.cold());
-    });
-    choices(p, "expired", CHOICES.expired, () => S.look.expired, (v) => {
-      S.look.expired = v;
-      setLeft(PHASE_LEFT.expired());
-    });
-  }
-  {
-    let hold = function() {
-      if (S.furnace.follow && lastState)
-        Object.assign(S.furnace, { fire: lastState.fire, sparks: lastState.sparks, smoke: lastState.smoke });
-    };
-    const p = panel("Furnace", S.furnace);
-    choices(p, "design", Object.keys(FURNACES), () => S.look.furnace, (v) => {
-      S.look.furnace = v;
-    });
-    slider(p, "fire", { min: 0, max: 1, step: 0.01, get: () => lastState?.fire ?? 0, set: (v) => {
-      hold();
-      S.furnace.fire = v;
-    }, show: pct, follower: S.furnace });
-    slider(p, "sparks", { min: 0, max: 1, step: 0.01, get: () => lastState?.sparks ?? 0, set: (v) => {
-      hold();
-      S.furnace.sparks = v;
-    }, show: pct, follower: S.furnace });
-    slider(p, "smoke", { min: 0, max: 1, step: 0.01, get: () => lastState?.smoke ?? 0, set: (v) => {
-      hold();
-      S.furnace.smoke = v;
-    }, show: pct, follower: S.furnace });
-  }
-  {
-    const p = panel("Thrown", S.thrown, "Scrub the throw: crouch, lift, fly, hop back.");
-    choices(p, "object", Object.keys(THROWN), () => S.look.thrown, (v) => {
-      S.look.thrown = v;
-    });
-    const part = (t) => t >= THROW_MS ? "done" : t < 300 ? "crouch" : t < 750 ? "lift" : t < 1150 ? "fly" : "hop";
-    slider(p, "throw", {
-      min: 0,
-      max: THROW_MS,
-      step: 25,
-      get: () => S.thrown.follow ? lastState?.throwMs ?? THROW_MS : S.thrown.throwMs,
-      set: (v) => {
-        S.thrown.throwMs = v;
-      },
-      show: part,
-      follower: S.thrown
-    });
-  }
-  {
-    const p = panel("Clawd", S.clawd);
-    choices(p, "art", Object.keys(CLAWDS), () => S.look.clawd, (v) => {
-      S.look.clawd = v;
-    });
-    choices(p, "pose", POSES, () => S.clawd.follow ? lastState?.pose ?? "front" : S.clawd.pose, (v) => {
-      S.clawd.pose = v;
-      S.clawd.chill = lastState?.chill ?? 0;
-    }, S.clawd);
-    slider(p, "chill", { min: 0, max: 1, step: 0.01, get: () => S.clawd.follow ? lastState?.chill ?? 0 : S.clawd.chill, set: (v) => {
-      if (S.clawd.follow)
-        S.clawd.pose = lastState?.pose ?? "front";
-      S.clawd.chill = v;
-    }, show: pct, follower: S.clawd });
-  }
-  {
-    const p = panel("Weather", S.weather);
-    slider(p, "snow", { min: 0, max: 1, step: 0.01, get: () => S.weather.follow ? lastState?.snow ?? 0 : S.weather.snow, set: (v) => {
-      S.weather.snow = v;
-    }, show: pct, follower: S.weather });
-  }
-  {
-    let holdBar = function() {
-      if (S.bar.follow && lastState)
-        Object.assign(S.bar, { kind: lastState.kind, fraction: lastState.fraction, value: lastState.value });
-    };
-    const p = panel("Bar", S.bar, "Style and layout are the design; state, fill and value follow the clock.");
-    choices(p, "style", CHOICES.style, () => S.look.bar.style, (v) => {
-      S.look.bar.style = v;
-    });
-    choices(p, "layout", CHOICES.layout, () => S.look.bar.layout, (v) => {
-      S.look.bar.layout = v;
-    });
-    choices(p, "title", CHOICES.title, () => S.look.bar.title, (v) => {
-      S.look.bar.title = v;
-    });
-    choices(p, "color", CHOICES.color, () => S.look.bar.color, (v) => {
-      S.look.bar.color = v;
-    });
-    slider(p, "width", { min: 6, max: 14, step: 1, get: () => S.look.bar.width, set: (v) => {
-      S.look.bar.width = v;
-    }, show: (v) => String(v) });
-    choices(p, "state", KINDS, () => S.bar.follow ? lastState?.kind ?? "unlit" : S.bar.kind, (v) => {
-      holdBar();
-      S.bar.kind = v;
-    }, S.bar);
-    slider(p, "fill", { min: 0, max: 1, step: 0.01, get: () => S.bar.follow ? lastState?.fraction ?? 0 : S.bar.fraction, set: (v) => {
-      holdBar();
-      S.bar.fraction = v;
-    }, show: pct, follower: S.bar });
-    const value = el("input", { type: "text" });
-    value.oninput = () => {
-      holdBar();
-      S.bar.value = value.value;
-      S.bar.follow = false;
-      save();
-    };
-    syncs.push(() => {
-      if (document.activeElement !== value)
-        value.value = S.bar.follow ? lastState?.value ?? "" : S.bar.value;
-    });
-    p.append(el("div", { className: "row" }, el("span", {}, "value"), value, el("span")));
-  }
-  {
-    const p = panel("Terminal");
-    slider(p, "columns", { min: 30, max: 200, step: 1, get: () => S.view.columns, set: (v) => {
-      S.view.columns = v;
-    }, show: (v) => String(v) });
-    slider(p, "zoom", { min: 5, max: 16, step: 1, get: () => S.view.cell, set: (v) => {
-      S.view.cell = v;
-    }, show: (v) => `${v}px` });
-    choices(p, "theme", ["dark", "light"], () => S.view.theme, (v) => {
-      S.view.theme = v;
-    });
-    choices(p, "neighbour", ["off", "on"], () => S.view.neighbour ? "on" : "off", (v) => {
-      S.view.neighbour = v === "on";
-    });
-    choices(p, "outline", ["off", "on"], () => S.view.outline ? "on" : "off", (v) => {
-      S.view.outline = v === "on";
-    });
-    const size = el("p", { className: "note" });
-    syncs.push(() => {
-      const g = geometry(S.look);
-      size.textContent = lastSize === "full" ? `Scene: ${g.columns} x ${g.rows} cells (the first version was 53 x 8).` : lastSize === "line" ? `Too narrow for the scene (needs ${g.columns + MARK_COLUMNS} columns): one line.` : "Too narrow: the mod draws nothing.";
-    });
-    p.append(size, el("p", { className: "note" }, "neighbour: another plugin in the band (leitstand style); the furnace keeps to its own columns on the right."));
-  }
-  {
-    const p = panel("Export", undefined, "Copy this and paste it to Claude, or over hooks/look.ts.");
-    const area = el("textarea", { readOnly: true });
-    const copy = el("button", { textContent: "Copy look.ts" });
-    copy.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(area.value);
-      } catch {
-        area.select();
-        document.execCommand("copy");
-      }
-      copy.textContent = "Copied";
-      setTimeout(() => {
-        copy.textContent = "Copy look.ts";
-      }, 1200);
-    };
-    const follow = el("button", { textContent: "Follow clock everywhere" });
-    follow.onclick = () => {
-      for (const f of [S.furnace, S.thrown, S.clawd, S.weather, S.bar])
-        f.follow = true;
-      save();
-      sync();
-    };
-    const reset = el("button", { textContent: "Reset all" });
-    reset.onclick = () => {
-      localStorage.removeItem(STORE);
-      S = clone(DEFAULTS);
-      location.reload();
-    };
-    syncs.push(() => {
-      area.value = lookTs(S.look);
-    });
-    p.append(area, el("div", { className: "choices" }, copy, follow, reset));
-  }
-  function lookTs(l) {
-    const q = (s) => `'${s}'`;
-    return [
-      "// The design the mod draws. tools/tuner.html picks one and its Export button copies it here.",
-      "import type { Look } from './scene'",
-      "",
-      "export const LOOK: Look = {",
-      `  size: ${l.size},`,
-      `  clawd: ${q(l.clawd)},`,
-      `  furnace: ${q(l.furnace)},`,
-      `  thrown: ${q(l.thrown)},`,
-      `  burning: ${q(l.burning)},`,
-      `  cold: ${q(l.cold)},`,
-      `  expired: ${q(l.expired)},`,
-      `  bar: { style: ${q(l.bar.style)}, width: ${l.bar.width}, layout: ${q(l.bar.layout)}, title: ${q(l.bar.title)}, color: ${q(l.bar.color)} },`,
-      "}",
-      ""
-    ].join(`
-`);
-  }
-  function advance(ms) {
-    now += ms;
-    if (lastRequestAt !== null)
-      lastRequestAt -= ms * (S.clock.rate - 1);
-    if (pendingRequest !== null && now >= pendingRequest) {
-      lastRequestAt = pendingRequest;
-      pendingRequest = null;
-    }
-  }
-  var status = document.getElementById("status");
-  var acc = 0;
-  var then = performance.now();
-  var saveAt = 0;
-  function loop(t) {
-    const dt = Math.min(500, t - then);
-    then = t;
-    if (isPlaying)
-      acc += dt * S.clock.speed;
-    let ticks = 0;
-    while (acc >= FRAME_MS && ticks < 4) {
-      acc -= FRAME_MS;
-      advance(FRAME_MS);
-      frame();
-      ticks++;
-    }
-    if (acc > FRAME_MS)
-      acc = 0;
-    if (ticks || !lastState) {
-      if (!lastState)
-        frame();
-      paintTerminal();
-      paintStrip();
-      sync();
-      const ph = phase(inputs());
-      status.textContent = ph.kind === "unlit" ? "unlit: no request yet" : ph.kind === "expired" ? `expired ${clock(ph.since)} ago` : `${ph.kind === "cold" ? "cold" : "burning"}: ${clock(ph.remaining)} left of ${S.clock.ttlMin}m`;
-      if (t > saveAt) {
-        save();
-        saveAt = t + 1000;
-      }
-    }
-  }
-  window.addEventListener("keydown", (e) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+  ttlIn.onchange = () => {
+    ttlMs = Number(ttlIn.value) * MIN;
+    left.min = String(-ttlMs / MIN / 4);
+    left.max = String(ttlMs / MIN);
+    lastRequestAt = now - ttlMs / 2;
+  };
+  $("unlit").onclick = () => {
+    lastRequestAt = null;
+    pendingRequest = null;
+  };
+  var send = () => {
+    throwAt = now;
+    pendingRequest = now + 200;
+  };
+  $("send").onclick = send;
+  var togglePlay = () => {
+    isPlaying = !isPlaying;
+    $("play").textContent = isPlaying ? "pause" : "play";
+  };
+  $("play").onclick = togglePlay;
+  var setTheme = (t) => {
+    theme = t;
+    document.body.dataset.theme = t;
+    localStorage.setItem("clawd-fireplace-theme", t);
+  };
+  $("theme").onclick = () => setTheme(theme === "dark" ? "light" : "dark");
+  setTheme(theme);
+  document.addEventListener("keydown", (e) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement)
       return;
     if (e.key === "p")
-      sendPrompt();
+      send();
     else if (e.key === " ") {
-      isPlaying = !isPlaying;
       e.preventDefault();
-    } else if (e.key === ".") {
-      isPlaying = false;
-      advance(FRAME_MS);
-      frame();
-      paintTerminal();
-      paintStrip();
-      sync();
-    } else
-      return;
-    sync();
+      togglePlay();
+    }
   });
-  frame();
-  paintTerminal();
-  paintStrip();
-  sync();
-  setInterval(() => loop(performance.now()), 25);
+  function drawLive() {
+    const cw = 9, ch = cw * 2;
+    const width = Number(widthIn.value);
+    widthOut.value = `${width} cols`;
+    const inp = { now, lastRequestAt, ttlMs, throwAt };
+    const d = band(inp, width);
+    const t = THEMES[theme];
+    const bandRows = d?.rows ?? 0;
+    const ctx = size(live, width * cw, (bandRows + 5) * ch);
+    ctx.font = `${Math.round(ch * 0.72)}px "Cascadia Mono", Consolas, Menlo, monospace`;
+    ctx.fillStyle = t.dim;
+    ctx.fillText("⏺ the transcript ends here", 0, ch / 2);
+    if (d) {
+      cells(ctx, d, width - MARK_COLUMNS - d.columns, 1, cw);
+      ctx.fillStyle = t.dim;
+      ctx.fillText("[-]", (width - 4) * cw, (bandRows + 0.5) * ch);
+    }
+    const rule = (r) => {
+      ctx.fillStyle = t.rule;
+      ctx.fillRect(0, (r + 0.5) * ch, width * cw, 1);
+    };
+    rule(bandRows + 2);
+    ctx.fillStyle = t.fg;
+    ctx.fillText("❯", cw, (bandRows + 3.5) * ch);
+    rule(bandRows + 4);
+    const s = derive(inp);
+    const m = lastRequestAt === null ? null : (ttlMs - (now - lastRequestAt)) / MIN;
+    leftOut.value = m === null ? "unlit" : `${m.toFixed(1)}m`;
+    if (m !== null && document.activeElement !== left)
+      left.value = String(m);
+    status.textContent = `${s.kind} · ${s.value}${d ? "" : " · too narrow, nothing drawn"}${d && d.rows === 1 ? " · the row alone" : ""}`;
+  }
+  var SHOTS = [
+    { title: "unlit, first prompt", lastAgo: null, isThrow: true },
+    { title: "burning, 50m left", lastAgo: 10 * MIN },
+    { title: "burning, 20m left", lastAgo: 40 * MIN },
+    { title: "prompt at 20m left", lastAgo: 40 * MIN, isThrow: true },
+    { title: "cooling, 6m left", lastAgo: 54 * MIN },
+    { title: "cooling, 1m left", lastAgo: 59 * MIN },
+    { title: "expired", lastAgo: 70 * MIN }
+  ];
+  var LOOP_MS = THROW_MS + 2000;
+  var gallery = $("gallery");
+  var shotCanvases = SHOTS.map((s) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    const label = document.createElement("span");
+    label.textContent = s.title;
+    const c = document.createElement("canvas");
+    card.append(label, c);
+    gallery.append(card);
+    return c;
+  });
+  function drawGallery(clock) {
+    const cw = 6;
+    SHOTS.forEach((s, i) => {
+      const t = clock % LOOP_MS;
+      const at = T0 + t;
+      const last = s.isThrow && t > 200 ? T0 + 200 : s.lastAgo === null ? null : T0 - s.lastAgo;
+      const d = frame(derive({ now: at, lastRequestAt: last, ttlMs: 60 * MIN, throwAt: s.isThrow ? T0 : null }), at);
+      cells(size(shotCanvases[i], d.columns * cw, d.rows * cw * 2), d, 0, 0, cw);
+    });
+  }
+  var galleryClock = 0;
+  setInterval(() => {
+    if (isPlaying) {
+      const isThrowing = throwAt !== null && now - throwAt < THROW_MS + 500;
+      now += FRAME_MS * (isThrowing ? 1 : Number(speedIn.value));
+      galleryClock += FRAME_MS;
+      if (pendingRequest !== null && now >= pendingRequest) {
+        lastRequestAt = pendingRequest;
+        pendingRequest = null;
+      }
+    }
+    drawLive();
+    drawGallery(galleryClock);
+  }, FRAME_MS);
 })();
 </script>
 </body>

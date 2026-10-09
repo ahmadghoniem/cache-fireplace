@@ -76,11 +76,12 @@ def scene(shot, light=False):
 
 def palette():
     names = {
-        'X': 'Clawd', 'x': 'Clawd shade', 'E': 'eyes', 'W': 'bark', 'w': 'bark shade', 'o': 'log end',
-        'K': 'iron', 'k': 'iron shade', 'h': 'iron highlight', 'r': 'rivet', 'P': 'pipe', 'B': 'brass',
-        'c': 'coal', 'g': 'coal shine', 'p': 'paper', 'q': 'paper line', 'S': 'scarf', 's': 'scarf shade',
+        'C': 'Clawd', 'c': 'Clawd, far side', 'E': 'eyes', 'B': 'scarf', 'b': 'scarf shade',
+        'R': 'stone, lit edge', 'P': 'stone', 'H': 'stone shade', 'k': 'firebrick', 'I': 'grate',
+        'L': 'bark', 'l': 'bark shade', 'W': 'log end', 'F': 'flame', 'f': 'flame, red', 'y': 'flame tip',
+        's': 'smoke', 'G': 'floor',
     }
-    rows = [(n, PAL[k]) for k, n in names.items()] + [('firebox (fill)', CYAN)]
+    rows = [(n, PAL[k]) for k, n in names.items()] + [('inside the opening (fill)', CYAN)]
     im = Image.new('RGB', (360, 34 * len(rows) + 10), (24, 24, 24))
     d = ImageDraw.Draw(im)
     for i, (n, c) in enumerate(rows):
@@ -90,12 +91,10 @@ def palette():
 
 
 OUT.mkdir(exist_ok=True)
-clawd = data['clawds']['built-in']
-poses = [clawd[p] for p in ['front', 'right', 'blink', 'crouch', 'up', 'warm', 'hug', 'sleep']] + [overlay(clawd['right'], data['scarf'])]
-grid(poses, 3, 16, 11).save(OUT / 'clawd-poses.png')
-grid([f['art'] for f in data['furnaces'].values()], 2, 16, 13, cyan_inside=True).save(OUT / 'furnaces.png')
-thrown = list(data['thrown'].values())
-grid([t['held'] for t in thrown] + [t['pile'] for t in thrown], 3, 9, 9).save(OUT / 'throwables.png')
+clawd = data['clawd']
+poses = [clawd[p] for p in ['stand', 'front', 'crouch', 'toss', 'hop']] + [overlay(clawd['stand'], data['scarf'])]
+grid(poses, 3, 21, 12).save(OUT / 'clawd-poses.png')
+grid([data['fireplace']], 1, 24, 14, cyan_inside=True).save(OUT / 'fireplace.png')
 scene(data['scenes']['burning']).save(OUT / 'scene-burning.png')
 scene(data['scenes']['cold']).save(OUT / 'scene-cold.png')
 palette().save(OUT / 'palette.png')

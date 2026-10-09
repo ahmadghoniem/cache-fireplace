@@ -5,8 +5,8 @@ a GIF and the frames as sprite strings the mod can draw.
       --gif tools/out/sheet.gif --ts hooks/sheet-frames.ts
 
   # The handoff sheets (tools/handoff/README.md): one sprite per cell, each its own size
-  python -I tools/import-sheet.py tools/handoff/results/clawd.png --cols 3 --rows 3 \
-      --names front,right,blink,crouch,up,warm,hug,sleep,scarf --sizes 12x8,12x8,12x8,12x7,12x8,13x8,12x8,12x7,12x8 \
+  python -I tools/import-sheet.py tools/handoff/results/clawd.png --cols 3 --rows 2 \
+      --names stand,front,crouch,toss,hop,scarf --sizes 17x10,17x10,17x10,19x10,17x10,17x10 \
       --gif tools/out/clawd.gif --ts tools/out/clawd.ts
 
 The background is the color in the sheet's corners (the prompt asks for flat
@@ -133,7 +133,7 @@ def main():
     ap.add_argument('--per-cell', action='store_true', help='crop each cell to its own sprite')
     ap.add_argument('--names', help='per cell, comma separated: writes a Record by name instead of a list')
     ap.add_argument('--alias', action='append', default=[], help='rrggbb=C: that color reads as palette character C')
-    ap.add_argument('--only', help='palette characters the sheet may use, e.g. KkhrPBD for a furnace')
+    ap.add_argument('--only', help='palette characters the sheet may use, e.g. RPHDkILlW for a fireplace')
     ap.add_argument('--inset', type=int, default=4, help='pixels cut from each cell edge, past grid lines')
     ap.add_argument('--tol', type=int, default=6000, help='how far from the background a pixel must be')
     ap.add_argument('--extra', type=int, default=8, help='colors of the sheet kept beside the palette')

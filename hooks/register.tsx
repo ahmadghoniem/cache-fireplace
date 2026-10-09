@@ -1,8 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import { LOOK } from './look'
-import { createScene, derive, geometry, lineColumns, toBase64 } from './scene'
+import { COLUMNS, ROWS, ROW_COLUMNS, derive, frame, line, toBase64 } from './scene'
 import type { Inputs } from './scene'
 import type { Moment } from '../types'
 
@@ -10,23 +9,21 @@ const lastRequestAt = atom({ plugin: 'clawd-furnace', key: 'lastRequestAt' } as 
 const throwAt = atom({ plugin: 'clawd-furnace', key: 'throwAt' } as const, null)
 const isHidden = atom({ plugin: 'clawd-furnace', key: 'isHidden' } as const, false)
 
-const KEY = 'furnace'
+const KEY = 'fireplace'
 // 8 frames a second, as the mascot GIFs run
 const FRAME_MS = 125
 const DEFAULT_TTL_MIN = 60
 
 // The band picks a size from the room it gets: the full scene, one line, or nothing
 type Size = 'full' | 'line'
-const FULL = geometry(LOOK)
 const sizeFor = (bodyColumns: number, maxRows: number): Size | null =>
-  bodyColumns >= FULL.columns && maxRows >= FULL.rows ? 'full' : bodyColumns >= lineColumns(LOOK) ? 'line' : null
+  bodyColumns >= COLUMNS && maxRows >= ROWS ? 'full' : bodyColumns >= ROW_COLUMNS ? 'line' : null
 
 // A prompt the person typed, not a slash command or a notification
 export const isThrow = (text: string, origin: string | undefined) =>
   (origin === 'composer' || origin === 'bridge' || origin === 'sdk') && !text.trimStart().startsWith('/')
 
 export const register: Register = on => {
-  const scene = createScene()
   let ttlMs = DEFAULT_TTL_MIN * 60_000
   // The timer reads these; the atoms hold the same and survive a reload
   let last: Moment = null
@@ -34,12 +31,12 @@ export const register: Register = on => {
   // The band drawn now, for the timer to repaint
   let site: { requestId: string; size: Size } | null = null
   let isBusy = false
-  // What the band shows now: a still scene (unlit, no snow) is not sent again
+  // What the band shows now: a frame like the last is not sent again
   let shown = ''
 
   const draw = (size: Size, inp: Inputs) => {
-    const state = derive(inp, LOOK)
-    return toBase64((size === 'full' ? scene.frame(state, LOOK, inp.now) : scene.line(state, LOOK)).cells)
+    const state = derive(inp)
+    return toBase64((size === 'full' ? frame(state, inp.now) : line(state)).cells)
   }
 
   on('session.start', async ($, e, next) => {
@@ -70,15 +67,15 @@ export const register: Register = on => {
       }
     })
 
-    await $.command.register({ name: 'furnace', description: 'Show or hide Clawd\u2019s furnace above the prompt' })
+    await $.command.register({ name: 'fireplace', description: 'Show or hide Clawd\u2019s fireplace above the prompt' })
 
     return next(e)
   })
 
-  on('command.run', { command: 'furnace' }, async ($, e) => {
+  on('command.run', { command: 'fireplace' }, async ($, e) => {
     const wasHidden = await read($, isHidden)
     await update($, isHidden, () => !wasHidden)
-    return { text: wasHidden ? 'Furnace shown.' : 'Furnace hidden. /furnace brings it back.' }
+    return { text: wasHidden ? 'Fireplace shown.' : 'Fireplace hidden. /fireplace brings it back.' }
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -113,7 +110,7 @@ export const register: Register = on => {
     }
     site = { requestId: e.requestId, size }
 
-    // What the plugins beneath draw keeps the left of the band; the furnace takes only its own columns
+    // What the plugins beneath draw keeps the left of the band; the fireplace takes only its own columns
     const below = await next(e)
     const { Box, Raster } = $.ui.resolve(e)
     const inp: Inputs = {
@@ -124,7 +121,7 @@ export const register: Register = on => {
     }
     shown = draw(size, inp)
     const raster = (
-      <Raster key={KEY} columns={size === 'full' ? FULL.columns : lineColumns(LOOK)} rows={size === 'full' ? FULL.rows : 1} cells={shown} />
+      <Raster key={KEY} columns={size === 'full' ? COLUMNS : ROW_COLUMNS} rows={size === 'full' ? ROWS : 1} cells={shown} />
     )
     if (below.type === 'engine') {
       return (

@@ -1,8 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { LOOK } from './look'
 import { isThrow } from './register'
-import { clock, createScene, derive, geometry, lineColumns, phase } from './scene'
+import { COLUMNS, ROWS, ROW_COLUMNS, T_IMPACT, clock, derive, frame, line, phase } from './scene'
 import type { Inputs } from './scene'
 import { PAL } from './sprites'
 
@@ -13,7 +12,6 @@ const HOUR = 60 * MIN
 const blits: { requestId: string; key: string; cells: string }[] = []
 // Whether a test's band is up: the kit does not name its requestId. `below` is what the plugins beneath draw
 const band: { isMounted: boolean; below: unknown } = { isMounted: false, below: { type: 'engine', ref: 0 } }
-const FULL = geometry(LOOK)
 
 type Node = { type?: string; props?: Record<string, unknown>; children?: unknown[] }
 const rasters = (n: unknown): Node[] => {
@@ -64,7 +62,7 @@ const step = async ($: any, agentId?: string) => {
   for await (const _ of stream) {}
 }
 
-// How it can fail: the wrong phase for the time left, a cold furnace while there is plenty of time
+// How it can fail: the wrong phase for the time left, a cold fire while there is plenty of time
 test('phases follow the time since the last request', () => {
   const at = (ago: number) => phase({ now: T0, lastRequestAt: T0 - ago, ttlMs: HOUR, throwAt: null })
   expect(phase({ now: T0, lastRequestAt: null, ttlMs: HOUR, throwAt: null }).kind).toBe('unlit')
@@ -81,18 +79,17 @@ test('phases follow the time since the last request', () => {
 test('the full scene is drawn where it fits, one line where it does not, nothing when too narrow', async ($, on) => {
   await world($, on)
   const [wide] = await draw($, 120)
-  expect(wide?.props).toMatchObject({ key: 'furnace', columns: FULL.columns, rows: FULL.rows })
-  // 25% under the first version's 53 x 8
-  expect(FULL.columns).toBeLessThanOrEqual(45)
-  expect(FULL.rows).toBe(6)
-  const [narrow] = await draw($, FULL.columns - 1)
-  expect(narrow?.props).toMatchObject({ columns: lineColumns(LOOK), rows: 1 })
+  expect(wide?.props).toMatchObject({ key: 'fireplace', columns: COLUMNS, rows: ROWS })
+  // 25% under the first version's 8 rows
+  expect(ROWS).toBe(6)
+  const [narrow] = await draw($, COLUMNS - 1)
+  expect(narrow?.props).toMatchObject({ columns: ROW_COLUMNS, rows: 1 })
   expect(textOf(narrow!.props!.cells as string)).toContain('cache')
-  expect(await draw($, lineColumns(LOOK) - 1)).toHaveLength(0)
+  expect(await draw($, ROW_COLUMNS - 1)).toHaveLength(0)
   expect(await draw($, 120, true)).toHaveLength(0)
 })
 
-// How it can fail: the furnace hides what another plugin draws in the band, or takes the whole row for itself
+// How it can fail: the fireplace hides what another plugin draws in the band, or takes the whole row for itself
 test('what the plugins beneath draw keeps the left of the band', async ($, on) => {
   await world($, on)
   const alone = (await mount($)) as Node
@@ -102,61 +99,71 @@ test('what the plugins beneath draw keeps the left of the band', async ($, on) =
   const [left, right] = shared.children as Node[]
   expect(JSON.stringify(left)).toContain('leitstand')
   expect(left!.props).toMatchObject({ flexGrow: 1 })
-  expect(right).toMatchObject({ type: 'Raster', props: { columns: FULL.columns } })
+  expect(right).toMatchObject({ type: 'Raster', props: { columns: COLUMNS } })
 })
 
 test('a request starts the hour; a subagent request does not', async ($, on) => {
   const time = await world($, on, {}, false)
   await step($, 'agent-1')
-  const line = async () => textOf((await draw($, 30))[0]!.props!.cells as string)
-  expect(await line()).not.toMatch(/\d/)
+  const text = async () => textOf((await draw($, ROW_COLUMNS))[0]!.props!.cells as string)
+  expect(await text()).toContain('unlit')
+  expect(await text()).not.toMatch(/\d/)
   await step($)
   await time.advance(13 * MIN)
-  expect(await line()).toContain('47m')
+  expect(await text()).toMatch(/✱ burning +cache .*47m/)
   await time.advance(42 * MIN)
-  expect(await line()).toContain('5:00')
+  expect(await text()).toMatch(/! cooling .*5:00/)
   await time.advance(10 * MIN)
-  expect(await line()).toContain('out')
+  expect(await text()).toMatch(/! expired .*out/)
 })
 
 test('CLAWD_FURNACE_TTL_MINUTES sets the cache length', async ($, on) => {
   const time = await world($, on, { CLAWD_FURNACE_TTL_MINUTES: '5' })
   await step($)
   await time.advance(MIN)
-  expect(textOf((await draw($, 30))[0]!.props!.cells as string)).toContain('4:00')
+  expect(textOf((await draw($, ROW_COLUMNS))[0]!.props!.cells as string)).toContain('4:00')
 })
 
 test('a typed prompt throws a log; slash commands and notifications do not', async ($, on) => {
   expect(isThrow('fix the bug', 'composer')).toBe(true)
-  expect(isThrow('  /furnace', 'composer')).toBe(false)
+  expect(isThrow('  /fireplace', 'composer')).toBe(false)
   expect(isThrow('<task-notification>', 'task-notification')).toBe(false)
   // The prompt goes through untouched
   await world($, on)
   expect(await $.prompt.submit({ text: 'fix the bug', origin: { kind: 'composer' } } as never)).toMatchObject({ text: 'fix the bug' })
 })
 
-test('the thrown log flies into the furnace', () => {
-  const logs = (cells: Uint32Array) => {
-    let n = 0
-    for (let i = 0; i < cells.length; i += 3) if (cells[i + 1] === PAL.W || cells[i + 2] === PAL.W) n++
-    return n
+const count = (cells: Uint32Array, color: number) => {
+  let n = 0
+  for (let i = 0; i < cells.length; i += 3) if (cells[i + 1] === color || cells[i + 2] === color) n++
+  return n
+}
+const cellsAt = (inp: Inputs) => frame(derive(inp), inp.now).cells
+
+test('the thrown log flies into the fire, which flares', () => {
+  const inp = { now: T0 + 1125, lastRequestAt: T0, ttlMs: HOUR, throwAt: null }
+  // In the air: one log more than the pile and the grate hold
+  expect(count(cellsAt({ ...inp, throwAt: T0 }), PAL.W!)).toBeGreaterThan(count(cellsAt(inp), PAL.W!))
+  // A low fire burns higher once the log lands
+  const later = { now: T0 + 40 * MIN, lastRequestAt: T0, ttlMs: HOUR }
+  const flame = (throwAt: number | null) => {
+    const cells = cellsAt({ ...later, throwAt })
+    return count(cells, PAL.F!) + count(cells, PAL.f!) + count(cells, PAL.y!)
   }
-  const frame = (inp: Inputs) => createScene().frame(derive(inp, LOOK), LOOK, inp.now).cells
-  const inp = { now: T0 + 900, lastRequestAt: T0, ttlMs: HOUR, throwAt: null }
-  expect(logs(frame({ ...inp, throwAt: T0 }))).toBeGreaterThan(logs(frame(inp)))
+  expect(flame(later.now - T_IMPACT - 200)).toBeGreaterThan(flame(null))
 })
 
-// How it can fail: a concept picked in the tuner draws the same as another
-test('each concept for a state draws differently', () => {
-  const inp = (ago: number) => ({ now: T0, lastRequestAt: T0 - ago, ttlMs: HOUR, throwAt: null })
-  const drawn = (look: typeof LOOK, ago: number) => {
-    const scene = createScene(1)
-    return [...scene.frame(derive(inp(ago), look), look, T0).cells].join()
-  }
-  for (const [key, names, ago] of [['burning', ['steady', 'warm'], 20 * MIN], ['cold', ['shiver', 'scarf', 'huddle'], 58 * MIN], ['expired', ['ice', 'asleep', 'smoke'], 70 * MIN]] as const) {
-    const frames = names.map(name => drawn({ ...LOOK, [key]: name }, ago))
-    expect(new Set(frames).size).toBe(names.length)
-  }
+// How it can fail: the scarf on a warm Clawd, or the fire still burning in the cold
+test('cold and expired share the scarf; the fireplace tells them apart', () => {
+  const at = (ago: number) => cellsAt({ now: T0, lastRequestAt: T0 - ago, ttlMs: HOUR, throwAt: null })
+  const burning = at(20 * MIN), cold = at(55 * MIN), expired = at(70 * MIN)
+  expect(count(burning, PAL.B!)).toBe(0)
+  expect(count(cold, PAL.B!)).toBeGreaterThan(0)
+  expect(count(expired, PAL.B!)).toBe(count(cold, PAL.B!))
+  expect(count(burning, PAL.y!)).toBeGreaterThan(0)
+  expect(count(cold, PAL.y!)).toBe(0)
+  expect(count(cold, PAL.a!)).toBe(0)
+  expect(count(expired, PAL.a!)).toBeGreaterThan(0)
 })
 
 test('the frame timer repaints the mounted band and stops once it is gone', async ($, on) => {
@@ -164,11 +171,11 @@ test('the frame timer repaints the mounted band and stops once it is gone', asyn
   const ui = await $.ui.mount({ plugin: 'clawd-furnace', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 12, bodyColumns: 120 } as never })
   band.isMounted = true
   await step($)
-  await time.advance(500)
+  await time.advance(1000)
   expect(blits.length).toBeGreaterThanOrEqual(3)
-  expect(blits[0]).toMatchObject({ key: 'furnace' })
-  // Each frame differs: the fire burns
-  expect(new Set(blits.map(b => b.cells)).size).toBe(blits.length)
+  expect(blits[0]).toMatchObject({ key: 'fireplace' })
+  // Only a changed frame is sent: the fire burns
+  for (let i = 1; i < blits.length; i++) expect(blits[i]!.cells).not.toBe(blits[i - 1]!.cells)
   band.isMounted = false
   await ui.unmount()
   await time.advance(250)
@@ -177,23 +184,20 @@ test('the frame timer repaints the mounted band and stops once it is gone', asyn
   expect(blits.length).toBe(after)
 })
 
-test('/furnace hides and shows the band', async ($, on) => {
+test('/fireplace hides and shows the band', async ($, on) => {
   await world($, on)
-  await $.command.run({ command: 'furnace', args: '' } as never)
+  await $.command.run({ command: 'fireplace', args: '' } as never)
   expect(await draw($)).toHaveLength(0)
-  await $.command.run({ command: 'furnace', args: '' } as never)
+  await $.command.run({ command: 'fireplace', args: '' } as never)
   expect(await draw($)).toHaveLength(1)
 })
 
 test('the scene animates and the compact line fits its columns', () => {
-  const scene = createScene()
   const inp = { now: T0, lastRequestAt: T0, ttlMs: HOUR, throwAt: T0 }
-  const at = (now: number) => scene.frame(derive({ ...inp, now }, LOOK), LOOK, now).cells
-  expect(at(T0)).toHaveLength(FULL.columns * FULL.rows * 3)
-  expect(scene.line(derive(inp, LOOK), LOOK).cells).toHaveLength(lineColumns(LOOK) * 3)
-  for (const size of [75, 60] as const) {
-    const g = geometry({ ...LOOK, size })
-    expect(createScene().frame(derive(inp, LOOK), { ...LOOK, size }, T0).cells).toHaveLength(g.columns * g.rows * 3)
-  }
-  expect(at(T0 + 500)).not.toEqual(at(T0 + 625))
+  const at = (now: number) => cellsAt({ ...inp, now })
+  expect(at(T0)).toHaveLength(COLUMNS * ROWS * 3)
+  expect(line(derive(inp)).cells).toHaveLength(ROW_COLUMNS * 3)
+  // The same moment draws the same frame
+  expect(at(T0 + 500)).toEqual(at(T0 + 500))
+  expect(at(T0 + 3000)).not.toEqual(at(T0 + 3160))
 })

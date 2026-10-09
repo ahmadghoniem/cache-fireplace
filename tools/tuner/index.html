@@ -2,50 +2,46 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Clawd furnace tuner</title>
+<title>Clawd fireplace</title>
 <style>
-  :root { --bg: #161514; --panel: #1f1e1c; --line: #34322f; --text: #e8e4dc; --dim: #8a8580; --clay: #d97757; }
+  body { --bg: #161514; --panel: #1f1e1c; --line: #34322f; --text: #e8e4dc; --dim: #8a8580; --clay: #d97757; }
+  body[data-theme=light] { --bg: #f0eee6; --panel: #faf9f5; --line: #d6d1c4; --text: #282828; --dim: #77726b; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, sans-serif; }
-  header { display: flex; align-items: baseline; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
   h1 { font-size: 15px; margin: 0; color: var(--clay); }
-  #status { font-family: Consolas, monospace; color: var(--dim); }
+  label { display: flex; align-items: center; gap: 6px; color: var(--dim); }
+  output, #status { font-family: Consolas, monospace; color: var(--dim); min-width: 52px; }
   #keys { margin-left: auto; color: var(--dim); }
   kbd { border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; font-family: Consolas, monospace; }
-  #stage { padding: 12px 16px; overflow-x: auto; }
-  canvas { display: block; image-rendering: pixelated; }
-  #strip { display: flex; flex-wrap: wrap; gap: 12px; padding: 0 16px 12px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; cursor: pointer; }
-  .card:hover { border-color: var(--clay); }
-  .card span { display: block; color: var(--dim); margin-bottom: 4px; }
-  #panels { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; padding: 0 16px 24px; align-items: start; }
-  fieldset { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; margin: 0; padding: 8px 10px 10px; min-width: 0; }
-  legend { padding: 0 6px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
-  legend label { font-weight: 400; color: var(--dim); }
-  fieldset.override legend label { color: var(--clay); }
-  .row { display: grid; grid-template-columns: 78px 1fr 52px; gap: 8px; align-items: center; margin: 5px 0; }
-  .row > span:first-child { color: var(--dim); }
-  .row output { font-family: Consolas, monospace; text-align: right; color: var(--dim); }
-  .choices { display: flex; flex-wrap: wrap; gap: 4px; }
-  button { background: #2a2826; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 3px 9px; font: inherit; cursor: pointer; }
+  button, select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 3px 9px; font: inherit; cursor: pointer; }
   button:hover { border-color: var(--dim); }
-  button.on { background: var(--clay); border-color: var(--clay); color: #1a1a1a; }
-  button.big { width: 100%; padding: 6px; margin-top: 4px; font-weight: 600; }
-  select, input[type=text] { background: #2a2826; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; font: inherit; width: 100%; }
-  input[type=range] { width: 100%; accent-color: var(--clay); }
-  textarea { width: 100%; height: 190px; background: #121110; color: var(--text); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.4 Consolas, monospace; resize: vertical; }
-  .note { color: var(--dim); font-size: 12px; margin: 4px 0 0; }
+  button#send { background: var(--clay); border-color: var(--clay); color: #1a1a1a; font-weight: 600; }
+  input[type=range] { width: 200px; accent-color: var(--clay); }
+  #stage { padding: 14px 16px 6px; overflow-x: auto; }
+  #status { padding: 0 16px 12px; }
+  canvas { display: block; }
+  #gallery { display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 16px 24px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+  .card span { display: block; color: var(--dim); margin-bottom: 4px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Clawd furnace tuner</h1>
-  <span id="status"></span>
-  <span id="keys"><kbd>p</kbd> send prompt &nbsp; <kbd>space</kbd> play/pause &nbsp; <kbd>.</kbd> step</span>
+  <h1>Clawd fireplace</h1>
+  <label>time left <input id="left" type="range" min="-15" max="60" step="0.1" value="35"><output id="leftOut"></output></label>
+  <label>cache <select id="ttl"><option value="60">1 hour</option><option value="5">5 min</option></select></label>
+  <label>speed <select id="speed"><option value="1">1x</option><option value="30">30x</option><option value="300">300x</option></select></label>
+  <label>terminal <input id="width" type="range" min="30" max="160" value="120"><output id="widthOut"></output></label>
+  <button id="send">send prompt</button>
+  <button id="unlit">unlit</button>
+  <button id="play">pause</button>
+  <button id="theme">dark / light</button>
+  <span id="keys"><kbd>p</kbd> send prompt &nbsp; <kbd>space</kbd> play/pause</span>
 </header>
-<section id="stage"><canvas id="term"></canvas></section>
-<section id="strip"></section>
-<section id="panels"></section>
+<section id="stage"><canvas id="live"></canvas></section>
+<div id="status"></div>
+<section id="gallery"></section>
 <!-- SCRIPT -->
 </body>
 </html>
