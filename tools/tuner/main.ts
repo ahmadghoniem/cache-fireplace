@@ -54,7 +54,18 @@ function cells(ctx: CanvasRenderingContext2D, d: Drawn, col0: number, row0: numb
       ctx.fillStyle = fg & DEFAULT ? THEMES[theme].fg : css(fg)
       if (cp === 0x2580) rect(ctx, x, y, cw, ch / 2)
       else if (cp === 0x2584) rect(ctx, x, y + ch / 2, cw, ch / 2)
-      else if (cp >= 0x2800 && cp <= 0x28ff) {
+      else if (cp >= 0x2591 && cp <= 0x2593) {
+        // Shades as cmd's font draws them: square dots on a 4 x 8 grid, ░ a quarter, ▒ half, ▓ three quarters
+        const dw = cw / 4, dh = ch / 8
+        for (let j = 0; j < 8; j++) for (let i = 0; i < 4; i++) {
+          const on = cp === 0x2591 ? (i + 2 * j) % 4 === 0 : cp === 0x2592 ? (i + j) % 2 === 0 : (i + 2 * j) % 4 !== 0
+          if (on) rect(ctx, x + i * dw, y + j * dh, dw, dh)
+        }
+      } else if (cp === 0x2500) rect(ctx, x, y + ch / 2 - 1, cw, 2)
+      else if (cp === 0x2572) {
+        ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 2
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cw, y + ch); ctx.stroke()
+      } else if (cp >= 0x2800 && cp <= 0x28ff) {
         const r = cw * 0.13
         BRAILLE_DOTS.forEach(([i, j], bit) => {
           if (!((cp - 0x2800) & (1 << bit))) return

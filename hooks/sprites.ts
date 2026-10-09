@@ -14,7 +14,6 @@ export const PAL: Record<string, number> = {
   H: 0x465160, // stone, shade
   D: 0x1c1310, // inside the fireplace
   k: 0x33190f, // firebrick
-  K: 0x7d8590, // poker
   L: 0x8b5a2b, // bark
   l: 0x5e3a1a, // bark, shade
   W: 0xbe8e5c, // cut end of a log
@@ -30,87 +29,104 @@ export type Art = string[]
 export const artWidth = (art: Art) => Math.max(0, ...art.map(l => l.length))
 
 // Clawd faces the fireplace on his right; the column away from it is a shade darker.
-// 12 x 7: body at columns 1-9, eyes at 3 and 8, legs at 1, 3, 7 and 9; columns 10-11 are for reaching.
+// 18 x 9, the mascot's own size with one row of legs: body at columns 2-14, eyes at 5 and 13,
+// arms on rows 4-5, legs at 2, 4, 12 and 14; columns 15-17 are for reaching.
 export const CLAWD = {
   // Arms out both sides, as the mascot stands
   stand: [
-    '.cCCCCCCCC..',
-    '.cCECCCCEC..',
-    '.cCECCCCEC..',
-    'cCCCCCCCCCC.',
-    '.cCCCCCCCC..',
-    '.cCCCCCCCC..',
-    '.c.C...C.C..',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCECCCCCCCEC...',
+    'cCCCCCCCCCCCCCCC..',
+    'cCCCCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..c.C.......C.C...',
   ],
-  // Both hands held out to the fire, the far one a row lower and a pixel shorter
+  // Both hands held out to the fire, the far one a row lower and shorter
   warm: [
-    '.cCCCCCCCC..',
-    '.cCECCCCEC..',
-    '.cCECCCCEC..',
-    '.cCCCCCCCCCC',
-    '.cCCCCCCCCc.',
-    '.cCCCCCCCC..',
-    '.c.C...C.C..',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCCCCCCCCCCCCCC',
+    '..cCCCCCCCCCCCCCCC',
+    '..cCCCCCCCCCCCCcc.',
+    '..cCCCCCCCCCCCC...',
+    '..c.C.......C.C...',
   ],
   // Rubbing his hands: the far arm slides out past the near one and back
   rub: [
-    '.cCCCCCCCC..',
-    '.cCECCCCEC..',
-    '.cCECCCCEC..',
-    '.cCCCCCCCCC.',
-    '.cCCCCCCCCcc',
-    '.cCCCCCCCC..',
-    '.c.C...C.C..',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCCCCCCCCCCCCC.',
+    '..cCCCCCCCCCCCCCC.',
+    '..cCCCCCCCCCCCCccc',
+    '..cCCCCCCCCCCCC...',
+    '..c.C.......C.C...',
   ],
   // Looking out of the band, the way the welcome banner's Clawd does
   front: [
-    '.CCCCCCCCC..',
-    '.CECCCCCEC..',
-    '.CECCCCCEC..',
-    'CCCCCCCCCCC.',
-    '.CCCCCCCCC..',
-    '.CCCCCCCCC..',
-    '.C.C...C.C..',
+    '..CCCCCCCCCCCCC...',
+    '..CCCCCCCCCCCCC...',
+    '..CCCECCCCCCCEC...',
+    '..CCCECCCCCCCEC...',
+    'CCCCCCCCCCCCCCCC..',
+    'CCCCCCCCCCCCCCCC..',
+    '..CCCCCCCCCCCCC...',
+    '..CCCCCCCCCCCCC...',
+    '..C.C.......C.C...',
   ],
   // Mid-step: the legs in pairs
   step: [
-    '.cCCCCCCCC..',
-    '.cCECCCCEC..',
-    '.cCECCCCEC..',
-    'cCCCCCCCCCC.',
-    '.cCCCCCCCC..',
-    '.cCCCCCCCC..',
-    '..cC...CC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCECCCCCCCEC...',
+    'cCCCCCCCCCCCCCCC..',
+    'cCCCCCCCCCCCCCCC..',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '...cC.......CC....',
   ],
   // Reaching down to the woodpile: a pixel lower, eyes squeezed, knees out (Basketball frame 4)
   crouch: [
-    '............',
-    '.cCCCCCCCC..',
-    '.cCECCCCEC..',
-    '.cCCCCCCCC..',
-    'ccCCCCCCCC..',
-    '.cCCCCCCCCCC',
-    'c.C.....C.C.',
+    '..................',
+    '..cCCCCCCCCCCCC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCCCCCCCCCCC...',
+    'ccCCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCCCCC',
+    '..cCCCCCCCCCCCC...',
+    '.c..C.......C..C..',
   ],
   // The near arm up and out, throwing
   toss: [
-    '.cCCCCCCCC..',
-    '.cCECCCCEC.C',
-    '.cCECCCCECC.',
-    'cCCCCCCCCC..',
-    '.cCCCCCCCC..',
-    '.cCCCCCCCC..',
-    '.c.C...C.C..',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC.CC',
+    '..cCCECCCCCCCECC..',
+    '..cCCECCCCCCCEC...',
+    'cCCCCCCCCCCCCCC...',
+    'cCCCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..c.C.......C.C...',
   ],
   // Holding the poker out level
   poke: [
-    '.cCCCCCCCC..',
-    '.cCECCCCEC..',
-    '.cCECCCCEC..',
-    'cCCCCCCCCCCC',
-    '.cCCCCCCCC..',
-    '.cCCCCCCCC..',
-    '.c.C...C.C..',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCECCCCCCCEC...',
+    'cCCCCCCCCCCCCCCCCC',
+    'cCCCCCCCCCCCCCCCCC',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..c.C.......C.C...',
   ],
 }
 export type ClawdPose = keyof typeof CLAWD
@@ -127,7 +143,9 @@ export const SCARF: Art = [
   '',
   '',
   '',
-  '.bBBBBBBBB',
+  '',
+  '..bBBBBBBBBBBBB',
+  '..bbbbbbbbbbbBB',
   '..Bb',
   '..bB',
 ]

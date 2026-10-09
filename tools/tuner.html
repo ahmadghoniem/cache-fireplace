@@ -55,7 +55,6 @@
     H: 4608352,
     D: 1839888,
     k: 3348751,
-    K: 8226192,
     L: 9132587,
     l: 6175258,
     W: 12488284,
@@ -69,76 +68,92 @@
   var artWidth = (art) => Math.max(0, ...art.map((l) => l.length));
   var CLAWD = {
     stand: [
-      ".cCCCCCCCC..",
-      ".cCECCCCEC..",
-      ".cCECCCCEC..",
-      "cCCCCCCCCCC.",
-      ".cCCCCCCCC..",
-      ".cCCCCCCCC..",
-      ".c.C...C.C.."
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..cCCECCCCCCCEC...",
+      "..cCCECCCCCCCEC...",
+      "cCCCCCCCCCCCCCCC..",
+      "cCCCCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..c.C.......C.C..."
     ],
     warm: [
-      ".cCCCCCCCC..",
-      ".cCECCCCEC..",
-      ".cCECCCCEC..",
-      ".cCCCCCCCCCC",
-      ".cCCCCCCCCc.",
-      ".cCCCCCCCC..",
-      ".c.C...C.C.."
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..cCCECCCCCCCEC...",
+      "..cCCECCCCCCCEC...",
+      "..cCCCCCCCCCCCCCCC",
+      "..cCCCCCCCCCCCCCCC",
+      "..cCCCCCCCCCCCCcc.",
+      "..cCCCCCCCCCCCC...",
+      "..c.C.......C.C..."
     ],
     rub: [
-      ".cCCCCCCCC..",
-      ".cCECCCCEC..",
-      ".cCECCCCEC..",
-      ".cCCCCCCCCC.",
-      ".cCCCCCCCCcc",
-      ".cCCCCCCCC..",
-      ".c.C...C.C.."
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..cCCECCCCCCCEC...",
+      "..cCCECCCCCCCEC...",
+      "..cCCCCCCCCCCCCCC.",
+      "..cCCCCCCCCCCCCCC.",
+      "..cCCCCCCCCCCCCccc",
+      "..cCCCCCCCCCCCC...",
+      "..c.C.......C.C..."
     ],
     front: [
-      ".CCCCCCCCC..",
-      ".CECCCCCEC..",
-      ".CECCCCCEC..",
-      "CCCCCCCCCCC.",
-      ".CCCCCCCCC..",
-      ".CCCCCCCCC..",
-      ".C.C...C.C.."
+      "..CCCCCCCCCCCCC...",
+      "..CCCCCCCCCCCCC...",
+      "..CCCECCCCCCCEC...",
+      "..CCCECCCCCCCEC...",
+      "CCCCCCCCCCCCCCCC..",
+      "CCCCCCCCCCCCCCCC..",
+      "..CCCCCCCCCCCCC...",
+      "..CCCCCCCCCCCCC...",
+      "..C.C.......C.C..."
     ],
     step: [
-      ".cCCCCCCCC..",
-      ".cCECCCCEC..",
-      ".cCECCCCEC..",
-      "cCCCCCCCCCC.",
-      ".cCCCCCCCC..",
-      ".cCCCCCCCC..",
-      "..cC...CC..."
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..cCCECCCCCCCEC...",
+      "..cCCECCCCCCCEC...",
+      "cCCCCCCCCCCCCCCC..",
+      "cCCCCCCCCCCCCCCC..",
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "...cC.......CC...."
     ],
     crouch: [
-      "............",
-      ".cCCCCCCCC..",
-      ".cCECCCCEC..",
-      ".cCCCCCCCC..",
-      "ccCCCCCCCC..",
-      ".cCCCCCCCCCC",
-      "c.C.....C.C."
+      "..................",
+      "..cCCCCCCCCCCCC...",
+      "..cCCECCCCCCCEC...",
+      "..cCCCCCCCCCCCC...",
+      "ccCCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCCCCC",
+      "..cCCCCCCCCCCCC...",
+      ".c..C.......C..C.."
     ],
     toss: [
-      ".cCCCCCCCC..",
-      ".cCECCCCEC.C",
-      ".cCECCCCECC.",
-      "cCCCCCCCCC..",
-      ".cCCCCCCCC..",
-      ".cCCCCCCCC..",
-      ".c.C...C.C.."
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC.CC",
+      "..cCCECCCCCCCECC..",
+      "..cCCECCCCCCCEC...",
+      "cCCCCCCCCCCCCCC...",
+      "cCCCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..c.C.......C.C..."
     ],
     poke: [
-      ".cCCCCCCCC..",
-      ".cCECCCCEC..",
-      ".cCECCCCEC..",
-      "cCCCCCCCCCCC",
-      ".cCCCCCCCC..",
-      ".cCCCCCCCC..",
-      ".c.C...C.C.."
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..cCCECCCCCCCEC...",
+      "..cCCECCCCCCCEC...",
+      "cCCCCCCCCCCCCCCCCC",
+      "cCCCCCCCCCCCCCCCCC",
+      "..cCCCCCCCCCCCC...",
+      "..cCCCCCCCCCCCC...",
+      "..c.C.......C.C..."
     ]
   };
   var shut = (art) => art.map((l) => l.replaceAll("E", "C"));
@@ -150,7 +165,9 @@
     "",
     "",
     "",
-    ".bBBBBBBBB",
+    "",
+    "..bBBBBBBBBBBBB",
+    "..bbbbbbbbbbbBB",
     "..Bb",
     "..bB"
   ];
@@ -290,13 +307,13 @@
       s.value = "–";
     return s;
   }
-  var FULL = "⣿";
-  var EDGE = "⡪";
+  var FULL = "▓";
+  var RAMP = ["░", "░", "▒", "▓"];
   var TRACK = "·";
   function loudMeter(fraction, width) {
-    const n = fraction <= 0 ? 0 : Math.max(1, Math.min(width, Math.ceil(fraction * width)));
-    const body = n >= 2 && n < width ? FULL.repeat(n - 1) + EDGE : FULL.repeat(n);
-    return [body, TRACK.repeat(width - n)];
+    const n = fraction <= 0 ? 0 : Math.max(1, Math.min(width, Math.round(fraction * width)));
+    const fade = n === width ? [] : [...RAMP].reverse().slice(0, Math.min(2, n));
+    return [FULL.repeat(n - fade.length) + fade.join(""), TRACK.repeat(width - n)];
   }
   var ROW = { bar: 12, value: 4 };
   var ROW_COLUMNS = ROW.bar + 1 + ROW.value;
@@ -315,11 +332,11 @@
     ];
   }
   var STAGE = (() => {
-    const h = FIREPLACE.length;
-    const pileX = 14;
+    const h = CLAWD.stand.length + 1;
+    const pileX = artWidth(CLAWD.stand) + 1;
     const fireX = pileX + artWidth(WOODPILE);
     const w = fireX + artWidth(FIREPLACE);
-    return { w, h, clawdX: 0, clawdY: h - 1 - CLAWD.stand.length, pileX, pileY: h - 1 - WOODPILE.length, fireX };
+    return { w, h, clawdX: 0, clawdY: 0, pileX, pileY: h - 1 - WOODPILE.length, fireX, fireY: h - FIREPLACE.length };
   })();
   var GAP = 2;
   var COLUMNS = ROW_COLUMNS + GAP + STAGE.w;
@@ -343,11 +360,12 @@
       });
     };
     const tick = Math.floor(now / FLAME_MS);
+    const glyphs = [];
     for (let x = 0;x < STAGE.fireX; x++)
       put(x, h - 1, PAL.G);
     sprite(WOODPILE, STAGE.pileX, STAGE.pileY);
     drawFireplace(s, tick, sprite, put);
-    drawClawd(s, now, sprite, put);
+    drawClawd(s, now, sprite, glyphs);
     const cells = new Uint32Array(COLUMNS * ROWS * 3).fill(0);
     for (let i = 0;i < COLUMNS * ROWS; i++) {
       cells[i * 3] = 32;
@@ -382,13 +400,27 @@
         }
       }
     }
+    for (const g of glyphs) {
+      if (g.x < 0 || g.x >= w || g.row < 0 || g.row >= ROWS)
+        continue;
+      const at = (g.row * COLUMNS + ROW_COLUMNS + GAP + g.x) * 3;
+      const top = px[g.row * 2 * w + g.x];
+      const bottom = px[(g.row * 2 + 1) * w + g.x];
+      const behind = bottom !== NONE ? bottom : top;
+      cells[at] = g.ch.codePointAt(0);
+      cells[at + 1] = g.fg;
+      cells[at + 2] = behind === NONE ? DEFAULT : behind;
+    }
     return { cells, columns: COLUMNS, rows: ROWS };
   }
+  var BED_Y = STAGE.fireY + BED.y;
+  var LOGS_Y = STAGE.fireY + LOGS_ROW;
+  var HEARTH_Y = STAGE.fireY + HEARTH_ROW;
   function drawFireplace(s, tick, sprite, put) {
     const fx = STAGE.fireX;
     const isLit = s.fire > 0;
     const glow = isLit ? 0.25 + 0.45 * s.fire : s.kind === "cold" ? 0.18 * (1 - s.cold) : 0;
-    sprite(FIREPLACE, fx, 0, (ch) => {
+    sprite(FIREPLACE, fx, STAGE.fireY, (ch) => {
       if (ch === "k")
         return mix(PAL.k, 9058850, glow);
       if (ch === "D")
@@ -396,12 +428,12 @@
       return PAL[ch];
     });
     for (let x = BED.x - 1;x < BED.x + BED.w + 1; x++)
-      put(fx + x, HEARTH_ROW, mix(PAL.R, 16096779, glow * 0.45));
+      put(fx + x, HEARTH_Y, mix(PAL.R, 16096779, glow * 0.45));
     const x0 = fx + BED.x;
     if (isLit) {
       const rows = s.fire >= 0.75 ? 3 : 2;
       for (let r = 0;r < rows; r++) {
-        const y = BED.y - r;
+        const y = BED_Y - r;
         const inset = r === 0 ? 0 : Math.min(3, r + 1);
         for (let i = inset;i < BED.w - inset; i++) {
           let ch;
@@ -417,8 +449,8 @@
       }
       if (s.fire > 0.9 || s.isStoked) {
         for (let k = 0;k < 3; k++) {
-          const y = BED.y - rows - Math.floor(hash(tick, 300 + k) * 2);
-          if (y >= 2 && hash(tick, 100 + k) < 0.6)
+          const y = BED_Y - rows - Math.floor(hash(tick, 300 + k) * 2);
+          if (y >= STAGE.fireY + 2 && hash(tick, 100 + k) < 0.6)
             put(x0 + 1 + Math.floor(hash(tick, 200 + k) * (BED.w - 2)), y, PAL.y);
         }
       }
@@ -427,7 +459,7 @@
     if (s.kind === "cold") {
       for (let i = 0;i < BED.w; i++) {
         if (hash(i, 7) < 0.75 - 0.6 * s.cold)
-          put(x0 + i, LOGS_ROW, PAL[(i + tick) % 3 === 0 ? "F" : "f"]);
+          put(x0 + i, LOGS_Y, PAL[(i + tick) % 3 === 0 ? "F" : "f"]);
       }
       smoke(x0 + 3, 0.5, tick, sprite);
       return;
@@ -435,7 +467,7 @@
     if (s.kind === "expired") {
       for (let i = 0;i < BED.w; i++)
         if (i % 5 !== 4)
-          put(x0 + i, LOGS_ROW, PAL.a);
+          put(x0 + i, LOGS_Y, PAL.a);
       smoke(x0 + 2, 1, tick, sprite);
     }
   }
@@ -443,19 +475,19 @@
     const t = tick % 16;
     if (t >= 8)
       return;
-    const y = LOGS_ROW - 1 - Math.floor(t / 2);
-    if (y < 3)
+    const y = LOGS_Y - 1 - Math.floor(t / 2);
+    if (y < STAGE.fireY + 3)
       return;
     const puff = PUFFS[Math.min(PUFFS.length - 1, Math.floor(t / 3))];
     const color = mix(PAL.D, PAL.s, strength * (1 - t / 12));
     sprite(puff, x + (t >> 2), y - puff.length + 1, (ch) => ch === "s" ? color : undefined);
   }
-  function drawClawd(s, now, sprite, put) {
+  function drawClawd(s, now, sprite, glyphs) {
     const { clawdX: x, clawdY: y } = STAGE;
     if (s.throwMs !== null)
       return drawThrow(Math.floor(s.throwMs / 125) * 125, sprite);
     if (s.pokeMs !== null)
-      return drawPoke(Math.floor(s.pokeMs / 125) * 125, sprite, put);
+      return drawPoke(Math.floor(s.pokeMs / 125) * 125, sprite, glyphs);
     const isBlink = now % 4100 < 160;
     const isFront = now % 17000 > 15200;
     const isCold = s.kind === "cold" || s.kind === "expired";
@@ -488,16 +520,16 @@
       return sprite(CLAWD.crouch, x, y);
     if (t < T_LIFT) {
       sprite(CLAWD.stand, x, y);
-      return sprite(LOG, x + 10, y + 2);
+      return sprite(LOG, x + 15, y + 3);
     }
     if (t < T_RELEASE) {
       sprite(CLAWD.toss, x, y);
-      return sprite(LOG, x + 10, y);
+      return sprite(LOG, x + 16, y);
     }
     if (t < T_IMPACT) {
       const k = (t - T_RELEASE) / (T_IMPACT - T_RELEASE);
       sprite(CLAWD.toss, x, y);
-      return sprite(LOG, lerp(x + 10, fireX + BED.x + 2, k), lerp(y + 1, BED.y - 1, k));
+      return sprite(LOG, lerp(x + 16, fireX + BED.x + 2, k), lerp(y + 1, BED_Y - 1, k));
     }
     if (t < T_TURN)
       return sprite(shut(CLAWD.stand), x, y);
@@ -509,7 +541,7 @@
       return sprite(turned(CLAWD.stand), 0, y);
     sprite(CLAWD.stand, 0, y);
   }
-  function drawPoke(t, sprite, put) {
+  function drawPoke(t, sprite, glyphs) {
     const { clawdY: y, fireX } = STAGE;
     const x = 1;
     if (t < P_REACH)
@@ -521,10 +553,10 @@
     sprite(CLAWD.poke, x, y);
     const isIn = P_JABS.some((j) => t >= j && t < j + P_JAB_MS);
     const tipX = fireX + BED.x + (isIn ? 1 : 0);
-    for (let px = x + 12;px < tipX - 1; px++)
-      put(px, y + 3, PAL.K);
-    put(tipX - 1, y + 4, PAL.K);
-    put(tipX, y + 5, isIn ? PAL.F : PAL.K);
+    const row = (y + 4) / 2;
+    for (let gx = x + artWidth(CLAWD.poke);gx < tipX; gx++)
+      glyphs.push({ x: gx, row, ch: "─", fg: PAL.L });
+    glyphs.push({ x: tipX, row: row + 1, ch: "╲", fg: isIn ? PAL.F : PAL.L });
   }
   function line(s) {
     const cells = new Uint32Array(ROW_COLUMNS * 3);
@@ -588,7 +620,24 @@
           rect(ctx, x, y, cw, ch / 2);
         else if (cp === 9604)
           rect(ctx, x, y + ch / 2, cw, ch / 2);
-        else if (cp >= 10240 && cp <= 10495) {
+        else if (cp >= 9617 && cp <= 9619) {
+          const dw = cw / 4, dh = ch / 8;
+          for (let j = 0;j < 8; j++)
+            for (let i = 0;i < 4; i++) {
+              const on = cp === 9617 ? (i + 2 * j) % 4 === 0 : cp === 9618 ? (i + j) % 2 === 0 : (i + 2 * j) % 4 !== 0;
+              if (on)
+                rect(ctx, x + i * dw, y + j * dh, dw, dh);
+            }
+        } else if (cp === 9472)
+          rect(ctx, x, y + ch / 2 - 1, cw, 2);
+        else if (cp === 9586) {
+          ctx.strokeStyle = ctx.fillStyle;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + cw, y + ch);
+          ctx.stroke();
+        } else if (cp >= 10240 && cp <= 10495) {
           const r = cw * 0.13;
           BRAILLE_DOTS.forEach(([i, j], bit) => {
             if (!(cp - 10240 & 1 << bit))

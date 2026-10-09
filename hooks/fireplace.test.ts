@@ -79,9 +79,9 @@ test('the full scene is drawn where it fits, one line where it does not, nothing
   await world($, on)
   const [wide] = await draw($, 120)
   expect(wide?.props).toMatchObject({ key: 'fireplace', columns: COLUMNS, rows: ROWS })
-  // A third under the last version's 6 rows and 80 columns
-  expect(ROWS).toBe(4)
-  expect(COLUMNS).toBeLessThanOrEqual(56)
+  // Under the last version's 6 rows and 80 columns
+  expect(ROWS).toBe(5)
+  expect(COLUMNS).toBeLessThanOrEqual(60)
   const [narrow] = await draw($, COLUMNS - 1)
   expect(narrow?.props).toMatchObject({ columns: ROW_COLUMNS, rows: 1 })
   expect(textOf(narrow!.props!.cells as string)).toContain('–')
@@ -110,9 +110,9 @@ test('a request starts the hour; a subagent request does not', async ($, on) => 
   expect(await text()).toBe('············    –')
   await step($)
   await time.advance(13 * MIN)
-  expect(await text()).toBe('⣿⣿⣿⣿⣿⣿⣿⣿⣿⡪··  47m')
+  expect(await text()).toBe('▓▓▓▓▓▓▓▓▒···  47m')
   await time.advance(42 * MIN)
-  expect(await text()).toBe('⣿··········· 5:00')
+  expect(await text()).toBe('▓··········· 5:00')
   await time.advance(10 * MIN)
   expect(await text()).toBe('············  out')
 })
@@ -121,7 +121,7 @@ test('a request starts the hour; a subagent request does not', async ($, on) => 
 test('under 5 minutes the last segment flickers in a burst every 30 s', () => {
   // T0 sits 20 s into a 30 s period
   const at = (ms: number) => line(derive({ now: T0 + ms, lastRequestAt: T0 - 57 * MIN, throwAt: null, pokeAt: null })).cells[0]
-  const full = '⣿'.codePointAt(0)
+  const full = '▓'.codePointAt(0)
   expect(at(0)).toBe(full)
   expect(at(10_000)).not.toBe(full)
   expect(at(10_250)).toBe(full)
@@ -141,7 +141,7 @@ test('a typed prompt to a cold cache throws a log on; to a warm one, a poke', as
   expect(isColdStart(T0, T0 - 61 * MIN)).toBe(true)
 
   const time = await world($, on)
-  const poker = async () => count(wordsOf((await draw($))[0]!.props!.cells as string), PAL.K!)
+  const poker = async () => glyphs(wordsOf((await draw($))[0]!.props!.cells as string), '─')
   // The prompt goes through untouched
   expect(await $.prompt.submit({ text: 'fix the bug', origin: { kind: 'composer' } } as never)).toMatchObject({ text: 'fix the bug' })
   await step($)
@@ -156,6 +156,11 @@ test('a typed prompt to a cold cache throws a log on; to a warm one, a poke', as
 const count = (cells: Uint32Array, color: number) => {
   let n = 0
   for (let i = 0; i < cells.length; i += 3) if (cells[i + 1] === color || cells[i + 2] === color) n++
+  return n
+}
+const glyphs = (cells: Uint32Array, ch: string) => {
+  let n = 0
+  for (let i = 0; i < cells.length; i += 3) if (cells[i] === ch.codePointAt(0)) n++
   return n
 }
 const cellsAt = (inp: Inputs) => frame(derive(inp), inp.now).cells

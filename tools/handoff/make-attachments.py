@@ -66,6 +66,15 @@ def scene(shot, light=False):
                 d.rectangle([x, y, x + CW - 1, y + CH // 2 - 1], fill=rgb(f, fg))
             elif cp == 0x2584:
                 d.rectangle([x, y + CH // 2, x + CW - 1, y + CH - 1], fill=rgb(f, fg))
+            elif 0x2591 <= cp <= 0x2593:
+                for j in range(8):
+                    for i in range(4):
+                        on = (i + 2 * j) % 4 == 0 if cp == 0x2591 else (i + j) % 2 == 0 if cp == 0x2592 else (i + 2 * j) % 4 != 0
+                        if on: d.rectangle([x + i * CW / 4, y + j * CH / 8, x + (i + 1) * CW / 4 - 1, y + (j + 1) * CH / 8 - 1], fill=rgb(f, fg))
+            elif cp == 0x2500:
+                d.line([x, y + CH // 2, x + CW - 1, y + CH // 2], fill=rgb(f, fg), width=2)
+            elif cp == 0x2572:
+                d.line([x, y, x + CW - 1, y + CH - 1], fill=rgb(f, fg), width=2)
             elif 0x2800 <= cp <= 0x28ff:
                 for bit, (i, j) in enumerate(DOTS):
                     if (cp - 0x2800) >> bit & 1:
@@ -93,8 +102,10 @@ def palette():
 
 
 OUT.mkdir(exist_ok=True)
+# tilt-sketch.png is the user's drawing, not generated
 for old in OUT.glob('*.png'):
-    old.unlink()
+    if old.name != 'tilt-sketch.png':
+        old.unlink()
 grid([data['fireplace']], 1, 18, 10, cyan_inside=True).save(OUT / 'fireplace.png')
 grid([data['woodpile'], data['log']], 2, 8, 6).save(OUT / 'logs.png')
 scene(data['scene']).save(OUT / 'scene.png')

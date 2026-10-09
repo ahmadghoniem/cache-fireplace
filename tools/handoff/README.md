@@ -19,16 +19,24 @@ The importer reads the sheet by color and by grid, so these matter more than sty
 
 ## 1. Fireplaces → `results/fireplace.png`
 
-Attach: `fireplace.png`, `scene.png`, `palette.png`
+Attach: `tilt-sketch.png`, `fireplace.png`, `palette.png`
 
 ```
 A pixel-art sprite sheet of 4 small fireplaces, each in 4 states: 4 columns by 4 rows.
-fireplace.png is the current one at its real pixel size; scene.png shows where it lives,
-in a terminal beside a coral character 12 pixels wide and 7 tall, who feeds it.
-Keep the flat, simple style of the character: few colors, no outlines, no texture noise.
 
-Every sprite is 14 pixels wide by 8 tall, each pixel a large hard square of the same size
-in all 16 cells, seen straight from the front, standing on the bottom of its cell.
+Angle: tilt-sketch.png shows it. Each fireplace is turned to face left, toward a character
+standing on its left. Its left side is pushed back: the left foot sits higher (the red arrow
+pointing up) and the left edge is shorter. Its right side comes toward the viewer: the right
+foot sits lower (the red arrow pointing down), the right edge is the tallest, and a narrow
+strip of the right side wall shows. Ignore the crossed-out woodpile in the sketch: instead,
+a small stack of 2 to 4 logs fills the gap under the raised left side, tucked under it.
+
+fireplace.png is the current one, straight on, at its real pixel size: keep its flat style.
+The character beside it is a coral block 17 pixels wide and 9 tall, with no outlines.
+Few colors, no outlines, no texture noise.
+
+Every sprite, its log stack included, fits in 16 pixels wide by 10 tall, each pixel a large
+hard square of the same size in all 16 cells, standing on the bottom of its cell.
 
 Rows, one style each:
 1 stone fireplace: pale stone mantel and hearth (#94A0B0, shade #465160), stone sides
@@ -54,28 +62,29 @@ no anti-aliasing.
 
 Claude imports the empty column as the sprite and reads the other three to set how the
 game draws the fire, embers and ash:
-`--cols 4 --rows 4 --sizes 14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8,14x8 --alias 00ffff=D`.
+`--cols 4 --rows 4 --sizes 16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10,16x10 --alias 00ffff=D`.
 
-## 2. Logs and woodpiles → `results/logs.png`
+## 2. Logs → `results/logs.png`
 
-Attach: `logs.png`, `scene.png`, `palette.png`
+Attach: `tilt-sketch.png`, `logs.png`, `palette.png`
 
 ```
-A pixel-art sprite sheet of 4 woodpiles and the single log each one gives: 4 columns by
-2 rows. logs.png is the current pile and log at their real pixel size; scene.png shows the
-pile in place, on the floor between a coral character and a small fireplace. Keep the flat,
-simple style of the character.
+A pixel-art sprite sheet of 4 log styles: 4 columns by 2 rows. logs.png is the current log
+at its real pixel size. There is no separate woodpile: the logs are kept tucked under a
+fireplace that is turned to face left, in the gap under its raised left side (see
+tilt-sketch.png and ignore the crossed-out pile in it). Flat style, few colors, no outlines.
 
-Top row: 4 woodpiles, each at most 6 pixels wide by 4 tall, standing on the bottom of
-its cell. Bottom row: under each pile, one log from it seen from the side, 3 or 4 pixels
-wide by 2 tall: the character carries it and throws it into the fire.
+Top row: the stack that fills that gap, wedge-shaped, taller on the left and thinning to the
+right, at most 6 pixels wide by 3 tall, standing on the bottom of its cell.
+Bottom row: under each stack, one log from it seen from the side, 3 or 4 pixels wide by
+2 tall: the character pulls it out and throws it into the fire.
 Each pixel is a large hard square of the same size in all 8 cells.
 
 Columns, one style each:
 1 split logs: brown bark #8B5A2B with a shade #5E3A1A, pale cut ends #BE8E5C.
 2 round birch logs: white bark (#E8E2D6) with a few dark marks (#3A3A3A), pale ends.
-3 a neat pyramid of round logs seen end-on: rings on each cut end.
-4 a small iron log rack (#2A2A30) holding 2 or 3 logs.
+3 round logs seen end-on: rings on each cut end.
+4 rough dark logs (#5E3A1A, #3B2410) with pale cut ends.
 
 Flat pure magenta #FF00FF background in every cell, no grid lines, no text, no shadows,
 no anti-aliasing.
@@ -98,9 +107,10 @@ Ask in the same chat; ChatGPT keeps the sheet and changes what you name.
 
 | File | What it shows |
 | --- | --- |
+| `tilt-sketch.png` | the angle wanted: left foot up, right foot down, the separate woodpile dropped |
 | `fireplace.png` | the current fireplace, the space for the fire in cyan |
 | `logs.png` | the current woodpile and the log Clawd carries |
-| `scene.png` | the scene as the terminal draws it, for scale |
+| `scene.png` | the scene as the terminal draws it, for scale (Clawd is drawn smaller than he will be) |
 | `palette.png` | the colors the mod uses, with hex codes |
 
 They are made from the mod's own sprites; after a sprite change, regenerate them:
