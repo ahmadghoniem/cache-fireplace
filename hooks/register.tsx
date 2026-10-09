@@ -1,7 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import { COLS, COMPACT_COLS, ROWS, createScene, toBase64 } from './scene'
+import { LOOK } from './look'
+import { createScene, derive, geometry, lineColumns, toBase64 } from './scene'
 import type { Inputs } from './scene'
 import type { Moment } from '../types'
 
@@ -15,9 +16,10 @@ const FRAME_MS = 125
 const DEFAULT_TTL_MIN = 60
 
 // The band picks a size from the room it gets: the full scene, one line, or nothing
-type Size = 'full' | 'compact'
+type Size = 'full' | 'line'
+const FULL = geometry(LOOK)
 const sizeFor = (bodyColumns: number, maxRows: number): Size | null =>
-  bodyColumns >= COLS && maxRows >= ROWS ? 'full' : bodyColumns >= COMPACT_COLS ? 'compact' : null
+  bodyColumns >= FULL.columns && maxRows >= FULL.rows ? 'full' : bodyColumns >= lineColumns(LOOK) ? 'line' : null
 
 // A prompt the person typed, not a slash command or a notification
 export const isThrow = (text: string, origin: string | undefined) =>
@@ -35,7 +37,10 @@ export const register: Register = on => {
   // What the band shows now: a still scene (unlit, no snow) is not sent again
   let shown = ''
 
-  const draw = (size: Size, inp: Inputs) => toBase64(size === 'full' ? scene.frame(inp) : scene.compact(inp))
+  const draw = (size: Size, inp: Inputs) => {
+    const state = derive(inp, LOOK)
+    return toBase64((size === 'full' ? scene.frame(state, LOOK, inp.now) : scene.line(state, LOOK)).cells)
+  }
 
   on('session.start', async ($, e, next) => {
     const minutes = Number(await $.env.get('CLAWD_FURNACE_TTL_MINUTES'))
@@ -108,6 +113,8 @@ export const register: Register = on => {
     }
     site = { requestId: e.requestId, size }
 
+    // What the plugins beneath draw keeps the left of the band; the furnace takes only its own columns
+    const below = await next(e)
     const { Box, Raster } = $.ui.resolve(e)
     const inp: Inputs = {
       now: await $.clock.now(),
@@ -115,11 +122,23 @@ export const register: Register = on => {
       ttlMs,
       throwAt: await read($, throwAt),
     }
-    const columns = size === 'full' ? COLS : COMPACT_COLS
     shown = draw(size, inp)
+    const raster = (
+      <Raster key={KEY} columns={size === 'full' ? FULL.columns : lineColumns(LOOK)} rows={size === 'full' ? FULL.rows : 1} cells={shown} />
+    )
+    if (below.type === 'engine') {
+      return (
+        <Box width={e.props.bodyColumns} justifyContent="flex-end">
+          {raster}
+        </Box>
+      )
+    }
     return (
-      <Box width={e.props.bodyColumns} justifyContent="flex-end">
-        <Raster key={KEY} columns={columns} rows={size === 'full' ? ROWS : 1} cells={shown} />
+      <Box width={e.props.bodyColumns} flexDirection="row" alignItems="flex-end">
+        <Box flexGrow={1} flexShrink={1}>
+          {below}
+        </Box>
+        {raster}
       </Box>
     )
   })

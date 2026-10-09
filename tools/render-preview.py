@@ -19,9 +19,10 @@ for f in data['frames']:
     d = ImageDraw.Draw(im)
     d.text((8, 4), f['title'], fill=(140, 135, 128), font=font)
     c = f['cells']
-    for r in range(rows):
-        for k in range(cols):
-            cp, fg, bg = c[(r * cols + k) * 3: (r * cols + k) * 3 + 3]
+    fc, fr = f.get('cols', cols), f.get('rows', rows)
+    for r in range(fr):
+        for k in range(fc):
+            cp, fg, bg = c[(r * fc + k) * 3: (r * fc + k) * 3 + 3]
             x, y = 8 + k * CW, 26 + r * CH
             fgc, bgc = rgb(fg, FG), rgb(bg, BG)
             d.rectangle([x, y, x + CW - 1, y + CH - 1], fill=bgc)

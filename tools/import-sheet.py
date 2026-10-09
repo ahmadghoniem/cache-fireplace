@@ -4,10 +4,16 @@ a GIF and the frames as sprite strings the mod can draw.
   python -I tools/import-sheet.py sheet.png --cols 4 --rows 4 --width 40 \
       --gif tools/out/sheet.gif --ts hooks/sheet-frames.ts
 
+  # The handoff sheets (tools/handoff/README.md): one sprite per cell, each its own size
+  python -I tools/import-sheet.py tools/handoff/results/clawd.png --cols 3 --rows 3 \
+      --names front,right,blink,crouch,up,warm,hug,sleep,scarf --sizes 12x8,12x8,12x8,12x7,12x8,13x8,12x8,12x7,12x8 \
+      --gif tools/out/clawd.gif --ts tools/out/clawd.ts
+
 The background is the color in the sheet's corners (the prompt asks for flat
-magenta). One crop box is shared by every frame, so the animation does not jitter.
+magenta). One crop box is shared by every frame, so the animation does not jitter;
+with --sizes (or --per-cell) each cell is cropped to its own sprite instead.
 Colors snap to the mod's palette (sprites.ts) plus up to --extra colors of the
-sheet's own.
+sheet's own; --alias 00ffff=D reads a marker color as a palette character.
 """
 import argparse
 import json
@@ -121,8 +127,13 @@ def main():
     ap.add_argument('--cols', type=int, required=True)
     ap.add_argument('--rows', type=int, required=True)
     ap.add_argument('--frames', type=int, help='how many cells hold frames (default: all)')
-    ap.add_argument('--width', type=int, required=True, help='pixels wide after shrinking')
+    ap.add_argument('--width', type=int, help='pixels wide after shrinking')
     ap.add_argument('--height', type=int, help='pixels tall (default: keeps the aspect)')
+    ap.add_argument('--sizes', help='per cell, comma separated: WxH, or W to keep the aspect; crops each cell to itself')
+    ap.add_argument('--per-cell', action='store_true', help='crop each cell to its own sprite')
+    ap.add_argument('--names', help='per cell, comma separated: writes a Record by name instead of a list')
+    ap.add_argument('--alias', action='append', default=[], help='rrggbb=C: that color reads as palette character C')
+    ap.add_argument('--only', help='palette characters the sheet may use, e.g. KkhrPBD for a furnace')
     ap.add_argument('--inset', type=int, default=4, help='pixels cut from each cell edge, past grid lines')
     ap.add_argument('--tol', type=int, default=6000, help='how far from the background a pixel must be')
     ap.add_argument('--extra', type=int, default=8, help='colors of the sheet kept beside the palette')
@@ -135,16 +146,37 @@ def main():
 
     sheet = Image.open(a.sheet).convert('RGB')
     bg = background(sheet)
-    frames = cells(sheet, a.cols, a.rows, a.inset)[: a.frames or a.cols * a.rows]
+    names = a.names.split(',') if a.names else None
+    frames = cells(sheet, a.cols, a.rows, a.inset)[: a.frames or (len(names) if names else a.cols * a.rows)]
     masks = [mask(f, bg, a.tol) for f in frames]
-    box = bbox(masks)
-    gw = a.width
-    gh = a.height or max(1, round(gw * (box[3] - box[1]) / (box[2] - box[0])))
-    grids = [shrink(f, m, box, gw, gh) for f, m in zip(frames, masks)]
+    sizes = a.sizes.split(',') if a.sizes else [None] * len(frames)
+    if len(sizes) != len(frames):
+        raise SystemExit(f'--sizes names {len(sizes)} cells, the sheet has {len(frames)}')
+    if not a.width and not a.sizes:
+        raise SystemExit('give --width or --sizes')
 
-    pal = {k: rgb(v) for k, v in mod_palette().items()}
+    def grid_size(size, box):
+        w, _, h = (size or str(a.width)).partition('x')
+        gw = int(w)
+        return gw, int(h) if h else a.height or max(1, round(gw * (box[3] - box[1]) / (box[2] - box[0])))
+
+    shared = None if a.sizes or a.per_cell else bbox(masks)
+    grids = []
+    for f, m, size in zip(frames, masks, sizes):
+        box = shared or bbox([m])
+        grids.append(shrink(f, m, box, *grid_size(size, box)))
+    gw = max(len(g[0]) for g in grids)
+    gh = max(len(g) for g in grids)
+
+    mod = mod_palette()
+    pal = {k: rgb(v) for k, v in mod.items() if not a.only or k in a.only}
+    for alias in a.alias:
+        hex_, _, ch = alias.partition('=')
+        pal[ch] = rgb(int(hex_, 16))
     extra = choose_extra(grids, pal, a.extra, 2500)
-    for ch, c in zip(EXTRA_CHARS, extra):
+    # The sheet's own colors take characters PAL does not use
+    free = [ch for ch in EXTRA_CHARS if ch not in mod]
+    for ch, c in zip(free, extra):
         pal[ch] = c
 
     def char(c):
@@ -155,19 +187,27 @@ def main():
     print(f'{len(art)} frames, {gw}x{gh} pixels, background #{bg[0]:02x}{bg[1]:02x}{bg[2]:02x}, colors {"".join(used)}')
 
     if a.ts:
-        own = {ch: c for ch, c in pal.items() if ch in used and ch in EXTRA_CHARS}
+        own = {ch: c for ch, c in pal.items() if ch in used and ch not in mod}
         lines = [f'// Written by tools/import-sheet.py from {Path(a.sheet).name}; run it again rather than editing', '']
         if own:
             lines.append(f'// Colors of the sheet beside PAL: merge into PAL in sprites.ts')
             lines.append(f'export const {a.name}_PAL: Record<string, number> = {{')
             lines += [f"  {ch}: 0x{c[0]:02x}{c[1]:02x}{c[2]:02x}," for ch, c in own.items()]
             lines += ['}', '']
-        lines.append(f'export const {a.name}: string[][] = [')
-        for frame in art:
-            lines.append('  [')
-            lines += [f'    {json.dumps(row)},' for row in frame]
-            lines.append('  ],')
-        lines.append(']')
+        if names:
+            lines.append(f'export const {a.name}: Record<string, string[]> = {{')
+            for name, frame in zip(names, art):
+                lines.append(f'  {json.dumps(name)}: [')
+                lines += [f'    {json.dumps(row)},' for row in frame]
+                lines.append('  ],')
+            lines.append('}')
+        else:
+            lines.append(f'export const {a.name}: string[][] = [')
+            for frame in art:
+                lines.append('  [')
+                lines += [f'    {json.dumps(row)},' for row in frame]
+                lines.append('  ],')
+            lines.append(']')
         Path(a.ts).write_text('\n'.join(lines) + '\n', encoding='utf-8')
         print('wrote', a.ts)
 
@@ -177,10 +217,12 @@ def main():
         for frame in art:
             im = Image.new('RGB', (gw, gh), dark)
             px = im.load()
+            # Sprites smaller than the largest stand on the floor, centred
+            ox, oy = (gw - len(frame[0])) // 2, gh - len(frame)
             for y, row in enumerate(frame):
                 for x, ch in enumerate(row):
                     if ch != '.':
-                        px[x, y] = pal[ch]
+                        px[ox + x, oy + y] = pal[ch]
             images.append(im.resize((gw * a.scale, gh * a.scale), Image.NEAREST))
         images[0].save(a.gif, save_all=True, append_images=images[1:], duration=a.ms, loop=0)
         print('wrote', a.gif)
