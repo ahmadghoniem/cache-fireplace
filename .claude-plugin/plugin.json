@@ -2,6 +2,6 @@
   "name": "clawd-furnace",
   "version": "0.1.0",
   "author": { "name": "Ahmed Ibrahim" },
-  "description": "Clawd keeps a fireplace burning above the prompt: each prompt throws a log on, and the fire dies as the prompt cache runs out.",
+  "description": "Clawd keeps a fireplace burning above the prompt: a prompt to a cold cache throws a log on, one to a warm cache pokes it, and the fire dies as the prompt cache runs out.",
   "types": "./types/index.d.ts"
 }

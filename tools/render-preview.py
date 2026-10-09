@@ -10,7 +10,8 @@ CW, CH = 9, 18
 BG = (250, 249, 245) if light else (12, 12, 12)
 FG = (40, 40, 40) if light else (220, 220, 220)
 font = ImageFont.truetype('C:/Windows/Fonts/consola.ttf', 15)
-SHADE = {0x2591: 0.25, 0x2592: 0.5, 0x2593: 0.75}
+# Braille dots on a 2 x 4 grid; bit i is dot i + 1
+DOTS = [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (0, 3), (1, 3)]
 def rgb(c, dflt):
     return dflt if c & 0x01000000 else ((c >> 16) & 255, (c >> 8) & 255, c & 255)
 frames = []
@@ -29,11 +30,11 @@ for f in data['frames']:
             if cp == 0x2580: d.rectangle([x, y, x + CW - 1, y + CH // 2 - 1], fill=fgc)
             elif cp == 0x2584: d.rectangle([x, y + CH // 2, x + CW - 1, y + CH - 1], fill=fgc)
             elif cp == 0x2588: d.rectangle([x, y, x + CW - 1, y + CH - 1], fill=fgc)
-            elif cp in SHADE:
-                p = SHADE[cp]
-                for yy in range(CH):
-                    for xx in range(CW):
-                        if ((xx * 7 + yy * 13) % 16) / 16 < p: im.putpixel((x + xx, y + yy), fgc)
+            elif 0x2800 <= cp <= 0x28ff:
+                for bit, (i, j) in enumerate(DOTS):
+                    if (cp - 0x2800) >> bit & 1:
+                        cx, cy = x + CW * (0.3 + 0.4 * i), y + CH * (0.17 + 0.22 * j)
+                        d.ellipse([cx - 1.2, cy - 1.2, cx + 1.2, cy + 1.2], fill=fgc)
             elif cp != 0x20:
                 d.text((x, y + 1), chr(cp), fill=fgc, font=font)
     frames.append(im)

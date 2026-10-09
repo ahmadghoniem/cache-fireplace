@@ -5,9 +5,9 @@ a GIF and the frames as sprite strings the mod can draw.
       --gif tools/out/sheet.gif --ts hooks/sheet-frames.ts
 
   # The handoff sheets (tools/handoff/README.md): one sprite per cell, each its own size
-  python -I tools/import-sheet.py tools/handoff/results/clawd.png --cols 3 --rows 2 \
-      --names stand,front,crouch,toss,hop,scarf --sizes 17x10,17x10,17x10,19x10,17x10,17x10 \
-      --gif tools/out/clawd.gif --ts tools/out/clawd.ts
+  python -I tools/import-sheet.py tools/handoff/results/logs.png --cols 4 --rows 2 --per-cell \
+      --names pile1,pile2,pile3,pile4,log1,log2,log3,log4 \
+      --gif tools/out/logs.gif --ts tools/out/logs.ts
 
 The background is the color in the sheet's corners (the prompt asks for flat
 magenta). One crop box is shared by every frame, so the animation does not jitter;

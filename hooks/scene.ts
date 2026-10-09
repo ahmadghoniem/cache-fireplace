@@ -1,16 +1,35 @@
 // The fireplace scene, drawn into Raster cells. Pure, and a function of the clock alone:
 // the same inputs draw the same frame, so the tuner and tools/preview show any moment.
-import { BED, CLAWD, FIREPLACE, LOG, LOGS_ROW, PAL, PUFFS, SCARF, TIPS, WOODPILE, artWidth, shut } from './sprites'
+import { BED, CLAWD, FIREPLACE, HEARTH_ROW, LOG, LOGS_ROW, PAL, PUFFS, SCARF, TIPS, WOODPILE, artWidth, shut, turned } from './sprites'
 import type { Art } from './sprites'
 
-export const COLD_MS = 10 * 60 * 1000
+const MIN = 60_000
+// The prompt cache lasts an hour
+export const TTL_MS = 60 * MIN
+// From 20 minutes left Clawd is cold: scarf on, rubbing his hands, the fire down to embers
+export const COLD_MS = 20 * MIN
+// From 5 minutes left the bar's last segment flickers, like a battery about to run out
+export const LOW_MS = 5 * MIN
+const FLICKER_EVERY_MS = 30_000
+const FLICKER_MS = 1500
 
-// The throw, in ms after the prompt was sent
-const T_PICK = 375
-const T_LIFT = 750
-const T_RELEASE = 1000
-export const T_IMPACT = 1375
-export const THROW_MS = 2000
+// The throw, after a prompt to a cold cache: walk to the woodpile, pick a log, toss it in, walk back.
+// In ms after the prompt was sent
+const T_WALK = 500
+const T_PICK = 750
+const T_LIFT = 1000
+const T_RELEASE = 1250
+export const T_IMPACT = 1625
+const T_TURN = 1875
+const T_BACK = 2000
+export const THROW_MS = 2750
+
+// The poke, after a prompt to a warm cache: step up, stoke the fire twice, step back
+const P_REACH = 250
+const P_JABS = [500, 1000]
+const P_JAB_MS = 250
+const P_DONE = 1500
+export const POKE_MS = 1750
 
 // The cooking scene's pace: its flames change every 160 ms
 const FLAME_MS = 160
@@ -23,9 +42,10 @@ export type Inputs = {
   now: number
   // When the main loop last sent a request: the cache was written or read then
   lastRequestAt: number | null
-  ttlMs: number
-  // When the person last sent a prompt: Clawd throws a log on
+  // When the person last sent a prompt to a cold cache: Clawd throws a log on
   throwAt: number | null
+  // When the person last sent a prompt to a warm cache: Clawd pokes the fire
+  pokeAt: number | null
 }
 
 export type Phase =
@@ -38,33 +58,40 @@ export type Kind = Phase['kind']
 // What a frame draws; the tuner can set any of it by hand
 export type State = {
   kind: Kind
-  // The fire, 0..1 (a fresh log flares it)
+  // The fire, 0..1 (a fresh log flares it, a poke less so)
   fire: number
   // 0..1 through the cold stretch: the embers go out one by one
   cold: number
-  // ms into the throw, null when Clawd is not throwing
+  // ms into the throw or the poke, null when Clawd is not doing it
   throwMs: number | null
+  pokeMs: number | null
+  // The poker is in the fire: sparks fly
+  isStoked: boolean
   // The bar
   fraction: number
   value: string
+  // The bar's last segment, blinked off
+  isFlickerOff: boolean
 }
 
-// The last 10 minutes are cold; with a short cache (5 minutes on the API) the last third
-const coldMs = (ttlMs: number) => Math.min(COLD_MS, ttlMs / 3)
-
-export function phase({ now, lastRequestAt, ttlMs }: Inputs): Phase {
+export function phase({ now, lastRequestAt }: Pick<Inputs, 'now' | 'lastRequestAt'>): Phase {
   if (lastRequestAt === null) return { kind: 'unlit' }
-  const remaining = ttlMs - (now - lastRequestAt)
+  const remaining = TTL_MS - (now - lastRequestAt)
   if (remaining <= 0) return { kind: 'expired', since: -remaining }
-  if (remaining < coldMs(ttlMs)) return { kind: 'cold', remaining, cold: 1 - remaining / coldMs(ttlMs) }
+  if (remaining < COLD_MS) return { kind: 'cold', remaining, cold: 1 - remaining / COLD_MS }
   return { kind: 'burning', remaining }
 }
 
+// A prompt to a cold cache (nothing sent yet, or expired) throws a log on; to a warm one, a poke
+export const isColdStart = (now: number, lastRequestAt: number | null) => {
+  const k = phase({ now, lastRequestAt }).kind
+  return k === 'unlit' || k === 'expired'
+}
+
 // How high the fire burns while the cache is warm: 1 fresh, 0.4 as the cold stretch begins
-export function intensity(p: Phase, ttlMs: number): number {
+export function intensity(p: Phase): number {
   if (p.kind !== 'burning') return 0
-  const cold = coldMs(ttlMs)
-  return 0.4 + 0.6 * ((p.remaining - cold) / Math.max(1, ttlMs - cold))
+  return 0.4 + 0.6 * ((p.remaining - COLD_MS) / (TTL_MS - COLD_MS))
 }
 
 export function clock(ms: number): string {
@@ -86,61 +113,73 @@ const hash = (a: number, b: number) => {
   t = Math.imul(t, 0x2c1b3c6d)
   return ((t ^ (t >>> 13)) >>> 0) / 4294967296
 }
+// ms since `at` while it is under `length`, else null
+const within = (now: number, at: number | null, length: number) => {
+  if (at === null) return null
+  const t = now - at
+  return t >= 0 && t < length ? t : null
+}
 
 export function derive(inp: Inputs): State {
   const p = phase(inp)
-  const since = inp.throwAt === null ? Infinity : inp.now - inp.throwAt
-  const throwMs = since >= 0 && since < THROW_MS ? since : null
-  // A fresh log flares up, then settles to what the clock says
-  const flare = since >= T_IMPACT ? 0.8 * Math.exp(-(since - T_IMPACT) / 1600) : 0
-  const s: State = { kind: p.kind, fire: clamp(intensity(p, inp.ttlMs) + flare), cold: 0, throwMs, fraction: 0, value: '' }
-  if (p.kind === 'burning') {
-    s.fraction = p.remaining / inp.ttlMs
+  const throwMs = within(inp.now, inp.throwAt, THROW_MS)
+  // A throw outranks a poke
+  const pokeMs = throwMs === null ? within(inp.now, inp.pokeAt, POKE_MS) : null
+  // A fresh log flares up, a poke a little, then the fire settles to what the clock says
+  let flare = 0
+  const sinceThrow = inp.throwAt === null ? -1 : inp.now - inp.throwAt
+  if (sinceThrow >= T_IMPACT) flare = 0.8 * Math.exp(-(sinceThrow - T_IMPACT) / 1600)
+  const sincePoke = inp.pokeAt === null ? -1 : inp.now - inp.pokeAt
+  for (const jab of P_JABS) if (sincePoke >= jab) flare = Math.max(flare, 0.5 * Math.exp(-(sincePoke - jab) / 700))
+  // Before the log lands there is nothing to burn
+  const fire = throwMs !== null && throwMs < T_IMPACT ? 0 : clamp(intensity(p) + flare)
+  const isStoked = pokeMs !== null && P_JABS.some(j => pokeMs >= j && pokeMs < j + P_JAB_MS)
+  const s: State = { kind: p.kind, fire, cold: 0, throwMs, pokeMs, isStoked, fraction: 0, value: '', isFlickerOff: false }
+  if (p.kind === 'burning' || p.kind === 'cold') {
+    s.fraction = p.remaining / TTL_MS
     s.value = clock(p.remaining)
-  } else if (p.kind === 'cold') {
-    s.cold = p.cold
-    s.fraction = p.remaining / inp.ttlMs
-    s.value = clock(p.remaining)
-  } else if (p.kind === 'expired') {
-    s.value = 'out'
-  } else {
-    s.value = '–'
   }
+  if (p.kind === 'cold') {
+    s.cold = p.cold
+    // Every 30 s a burst of blinks, three off and three on
+    const t = inp.now % FLICKER_EVERY_MS
+    s.isFlickerOff = p.remaining < LOW_MS && t < FLICKER_MS && Math.floor(t / 250) % 2 === 0
+  }
+  if (p.kind === 'expired') s.value = 'out'
+  if (p.kind === 'unlit') s.value = '–'
   return s
 }
 
-// --- The bar: one of leitstand's rows -----------------------------------------------------
+// --- The bar: one of leitstand's meters ----------------------------------------------------
 
-// leitstand's loud meter (hooks/bars.ts): a halftone body that fades at its edge, then a dotted track
-const FULL = '▓'
-const RAMP = ['░', '░', '▒', '▓']
-const fill = (pct: number, width: number) => Math.max(0, Math.min(width, Math.round((pct / 100) * width)))
-export function loudMeter(pct: number, width: number): [string, string] {
-  const n = fill(pct, width)
-  const fade = n === width ? [] : [...RAMP].reverse().slice(0, Math.min(2, n))
-  return [FULL.repeat(n - fade.length) + fade.join(''), '·'.repeat(width - n)]
+// leitstand's loud meter (hooks/bars.ts) in braille, so the dots show in any terminal font:
+// a dotted body whose front cell is half its dots, then a dotted track.
+// Any time left keeps at least one segment, the last charge
+const FULL = '⣿'
+const EDGE = '⡪'
+const TRACK = '·'
+export function loudMeter(fraction: number, width: number): [string, string] {
+  const n = fraction <= 0 ? 0 : Math.max(1, Math.min(width, Math.ceil(fraction * width)))
+  const body = n >= 2 && n < width ? FULL.repeat(n - 1) + EDGE : FULL.repeat(n)
+  return [body, TRACK.repeat(width - n)]
 }
 
-const fit = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w))
-// mark and state, the name, the bar, the value: as leitstand lays out a row
-export const ROW = { state: 9, name: 6, bar: 12, value: 4 }
-export const ROW_COLUMNS = 2 + ROW.state + ROW.name + ROW.bar + 1 + ROW.value
-const MARK: Record<Kind, [string, string, number]> = {
-  unlit: ['·', 'unlit', TONE.dim],
-  burning: ['✱', 'burning', TONE.clay],
-  cold: ['!', 'cooling', TONE.warn],
-  expired: ['!', 'expired', TONE.bad],
-}
+export const ROW = { bar: 12, value: 4 }
+export const ROW_COLUMNS = ROW.bar + 1 + ROW.value
+const TONES: Record<Kind, number> = { unlit: TONE.dim, burning: TONE.clay, cold: TONE.warn, expired: TONE.bad }
 
-// The row as runs of text and color
+// The row as runs of text and color: the bar and the time left
 export function row(s: State): [string, number][] {
-  const [mark, word, tone] = MARK[s.kind]
-  const [body, rest] = loudMeter(s.fraction * 100, ROW.bar)
+  const tone = TONES[s.kind]
+  let [body, rest] = loudMeter(s.fraction, ROW.bar)
+  // The last charge blinks off: the track shows through
+  if (s.isFlickerOff && body.length > 0) {
+    body = body.slice(0, -1)
+    rest = TRACK + rest
+  }
   return [
-    [`${mark} ${fit(word, ROW.state)}`, tone],
-    [fit('cache', ROW.name), DEFAULT],
     [body, tone],
-    [rest, TONE.track],
+    [rest, s.kind === 'expired' ? TONE.bad : TONE.track],
     [` ${s.value.padStart(ROW.value)}`, TONE.dim],
   ]
 }
@@ -149,10 +188,10 @@ export function row(s: State): [string, number][] {
 
 // Where everything sits, in pixels; two pixel rows to a terminal row
 export const STAGE = (() => {
-  const pileX = 18
+  const h = FIREPLACE.length
+  const pileX = 14
   const fireX = pileX + artWidth(WOODPILE)
   const w = fireX + artWidth(FIREPLACE)
-  const h = FIREPLACE.length
   return { w, h, clawdX: 0, clawdY: h - 1 - CLAWD.stand.length, pileX, pileY: h - 1 - WOODPILE.length, fireX }
 })()
 const GAP = 2
@@ -182,7 +221,7 @@ export function frame(s: State, now: number): Drawn {
   for (let x = 0; x < STAGE.fireX; x++) put(x, h - 1, PAL.G!)
   sprite(WOODPILE, STAGE.pileX, STAGE.pileY)
   drawFireplace(s, tick, sprite, put)
-  drawClawd(s, now, sprite)
+  drawClawd(s, now, sprite, put)
 
   // Text left of the stage on the bottom row, half-blocks after it
   const cells = new Uint32Array(COLUMNS * ROWS * 3).fill(0)
@@ -214,24 +253,24 @@ type Put = (x: number, y: number, c: number) => void
 // The fireplace tells the state: flames by height, then embers, then ash and smoke
 function drawFireplace(s: State, tick: number, sprite: Sprite, put: Put) {
   const fx = STAGE.fireX
-  const lit = s.kind === 'burning' || s.fire > 0
+  const isLit = s.fire > 0
   // Firebrick and the hearth in front take the fire's glow
-  const glow = lit ? 0.25 + 0.45 * s.fire : s.kind === 'cold' ? 0.18 * (1 - s.cold) : 0
+  const glow = isLit ? 0.25 + 0.45 * s.fire : s.kind === 'cold' ? 0.18 * (1 - s.cold) : 0
   sprite(FIREPLACE, fx, 0, ch => {
     if (ch === 'k') return mix(PAL.k!, 0x8a3a22, glow)
     if (ch === 'D') return mix(PAL.D!, 0x4a1e10, glow * 0.6)
     return PAL[ch]
   })
-  for (let x = BED.x - 1; x < BED.x + BED.w + 1; x++) put(fx + x, 10, mix(PAL.R!, 0xf59e0b, glow * 0.45))
+  for (let x = BED.x - 1; x < BED.x + BED.w + 1; x++) put(fx + x, HEARTH_ROW, mix(PAL.R!, 0xf59e0b, glow * 0.45))
 
   const x0 = fx + BED.x
-  if (lit) {
-    // Two rows as the cooking scene has them, more while the fire is high
-    const rows = s.fire >= 0.9 ? 4 : s.fire >= 0.7 ? 3 : 2
+  if (isLit) {
+    // Two rows as the cooking scene has them, three while the fire is high
+    const rows = s.fire >= 0.75 ? 3 : 2
     for (let r = 0; r < rows; r++) {
       const y = BED.y - r
-      // Each row up is narrower and sparser; the top row is the cooking scene's tips
-      const inset = r === 0 ? 0 : Math.min(4, r + 1)
+      // Each row up is narrower; the top row is the cooking scene's tips
+      const inset = r === 0 ? 0 : Math.min(3, r + 1)
       for (let i = inset; i < BED.w - inset; i++) {
         let ch: string
         if (r === 0) ch = (i + tick) % 2 === 0 ? 'F' : 'f'
@@ -240,10 +279,11 @@ function drawFireplace(s: State, tick: number, sprite: Sprite, put: Put) {
         if (ch !== '.') put(x0 + i, y, PAL[ch]!)
       }
     }
-    // Sparks up the flue from a fresh log
-    if (s.fire > 0.9) {
+    // Sparks up the flue from a fresh log or a poke
+    if (s.fire > 0.9 || s.isStoked) {
       for (let k = 0; k < 3; k++) {
-        if (hash(tick, 100 + k) < 0.5) put(x0 + 2 + Math.floor(hash(tick, 200 + k) * (BED.w - 4)), BED.y - rows - Math.floor(hash(tick, 300 + k) * 2), PAL.y!)
+        const y = BED.y - rows - Math.floor(hash(tick, 300 + k) * 2)
+        if (y >= 2 && hash(tick, 100 + k) < 0.6) put(x0 + 1 + Math.floor(hash(tick, 200 + k) * (BED.w - 2)), y, PAL.y!)
       }
     }
     return
@@ -253,59 +293,95 @@ function drawFireplace(s: State, tick: number, sprite: Sprite, put: Put) {
     for (let i = 0; i < BED.w; i++) {
       if (hash(i, 7) < 0.75 - 0.6 * s.cold) put(x0 + i, LOGS_ROW, PAL[(i + tick) % 3 === 0 ? 'F' : 'f']!)
     }
-    smoke(x0 + 5, 0.5, tick, sprite)
+    smoke(x0 + 3, 0.5, tick, sprite)
     return
   }
   if (s.kind === 'expired') {
-    for (let i = 0; i < BED.w; i++) if (i % 6 !== 5) put(x0 + i, LOGS_ROW, PAL.a!)
-    smoke(x0 + 4, 1, tick, sprite)
+    for (let i = 0; i < BED.w; i++) if (i % 5 !== 4) put(x0 + i, LOGS_ROW, PAL.a!)
+    smoke(x0 + 2, 1, tick, sprite)
   }
 }
 
 // A puff rising from the logs into the flue, every 16 ticks
 function smoke(x: number, strength: number, tick: number, sprite: Sprite) {
   const t = tick % 16
-  if (t >= 10) return
+  if (t >= 8) return
   const y = LOGS_ROW - 1 - Math.floor(t / 2)
   if (y < 3) return
-  const puff = PUFFS[Math.min(PUFFS.length - 1, Math.floor(t / 4))]!
-  const color = mix(PAL.D!, PAL.s!, strength * (1 - t / 14))
+  const puff = PUFFS[Math.min(PUFFS.length - 1, Math.floor(t / 3))]!
+  const color = mix(PAL.D!, PAL.s!, strength * (1 - t / 12))
   sprite(puff, x + (t >> 2), y - puff.length + 1, ch => (ch === 's' ? color : undefined))
 }
 
-function drawClawd(s: State, now: number, sprite: Sprite) {
+function drawClawd(s: State, now: number, sprite: Sprite, put: Put) {
   const { clawdX: x, clawdY: y } = STAGE
   if (s.throwMs !== null) return drawThrow(Math.floor(s.throwMs / 125) * 125, sprite)
+  if (s.pokeMs !== null) return drawPoke(Math.floor(s.pokeMs / 125) * 125, sprite, put)
   const isBlink = now % 4100 < 160
   // Now and then he looks out of the band
   const isFront = now % 17000 > 15200
-  const art = isFront ? CLAWD.front : CLAWD.stand
+  const isCold = s.kind === 'cold' || s.kind === 'expired'
+  // Cold: rubbing his hands for 2 s in every 6, else holding them together
+  const isRubbing = now % 6000 < 2000
+  let art: Art
+  if (isFront) art = CLAWD.front
+  else if (isCold) art = isRubbing && Math.floor(now / 250) % 2 === 1 ? CLAWD.rub : CLAWD.warm
+  else if (s.kind === 'burning') art = CLAWD.warm
+  else art = CLAWD.stand
   sprite(isBlink ? shut(art) : art, x, y)
-  // Low fire or none: a scarf
-  if (s.kind === 'cold' || s.kind === 'expired') sprite(SCARF, x, y)
+  if (isCold) sprite(SCARF, x, y)
 }
 
+// Two steps over `from` -> `to`, 125 ms a frame: a step, then standing a pixel on, twice
+function walk(t: number, from: number, to: number, face: (a: Art) => Art, sprite: Sprite) {
+  const i = Math.min(3, Math.floor(t / 125))
+  const x = from + Math.sign(to - from) * [0, 1, 1, 2][i]!
+  sprite(face(i % 2 === 0 ? CLAWD.step : CLAWD.stand), x, STAGE.clawdY)
+}
+const facing = (a: Art) => a
+
 function drawThrow(t: number, sprite: Sprite) {
-  const { clawdX: x, clawdY: y, fireX } = STAGE
-  if (t < T_PICK) {
-    sprite(CLAWD.crouch, x, y)
-  } else if (t < T_LIFT) {
+  const { clawdY: y, fireX } = STAGE
+  const x = 2
+  if (t < T_WALK) return walk(t, 0, x, facing, sprite)
+  if (t < T_PICK) return sprite(CLAWD.crouch, x, y)
+  if (t < T_LIFT) {
     sprite(CLAWD.stand, x, y)
-    sprite(LOG, x + 14, y + 3)
-  } else if (t < T_RELEASE) {
+    return sprite(LOG, x + 10, y + 2)
+  }
+  if (t < T_RELEASE) {
     sprite(CLAWD.toss, x, y)
-    sprite(LOG, x + 16, y)
-  } else if (t < T_IMPACT) {
+    return sprite(LOG, x + 10, y)
+  }
+  if (t < T_IMPACT) {
     // The log goes forward and drops into the fire
     const k = (t - T_RELEASE) / (T_IMPACT - T_RELEASE)
-    sprite(k < 0.5 ? CLAWD.toss : CLAWD.stand, x, y)
-    sprite(LOG, lerp(x + 16, fireX + BED.x + 4, k), lerp(y, BED.y, k * k))
-  } else {
-    // A hop at the flare
-    const k = (t - T_IMPACT) / (THROW_MS - T_IMPACT)
-    if (k < 0.4) sprite(shut(CLAWD.hop), x, y - 1)
-    else sprite(CLAWD.stand, x, y)
+    sprite(CLAWD.toss, x, y)
+    return sprite(LOG, lerp(x + 10, fireX + BED.x + 2, k), lerp(y + 1, BED.y - 1, k))
   }
+  // He watches it catch, eyes shut, then turns and walks back
+  if (t < T_TURN) return sprite(shut(CLAWD.stand), x, y)
+  if (t < T_BACK) return sprite(turned(CLAWD.stand), x, y)
+  if (t < T_BACK + 500) return walk(t - T_BACK, x, 0, turned, sprite)
+  if (t < T_BACK + 625) return sprite(turned(CLAWD.stand), 0, y)
+  sprite(CLAWD.stand, 0, y)
+}
+
+function drawPoke(t: number, sprite: Sprite, put: Put) {
+  const { clawdY: y, fireX } = STAGE
+  const x = 1
+  if (t < P_REACH) return walk(t, 0, x, facing, sprite)
+  if (t >= P_DONE) {
+    const back = t - P_DONE < 125
+    return sprite(back ? CLAWD.step : CLAWD.stand, back ? x : 0, y)
+  }
+  sprite(CLAWD.poke, x, y)
+  // The poker: level over the woodpile, then down into the logs; a jab pushes it a pixel in
+  const isIn = P_JABS.some(j => t >= j && t < j + P_JAB_MS)
+  const tipX = fireX + BED.x + (isIn ? 1 : 0)
+  for (let px = x + 12; px < tipX - 1; px++) put(px, y + 3, PAL.K!)
+  put(tipX - 1, y + 4, PAL.K!)
+  put(tipX, y + 5, isIn ? PAL.F! : PAL.K!)
 }
 
 // One row for a narrow terminal: the bar alone

@@ -1,7 +1,7 @@
 // The viewer: the mod's own scene code in a mock terminal. One live band to scrub and
 // send prompts to, and every state side by side under it.
 // Built into tools/tuner.html by tools/build-tuner.ts; open that file in a browser.
-import { COLUMNS, ROWS, ROW_COLUMNS, THROW_MS, derive, frame, line } from '../../hooks/scene'
+import { COLUMNS, ROW_COLUMNS, THROW_MS, TTL_MS, derive, frame, isColdStart, line } from '../../hooks/scene'
 import type { Drawn, Inputs } from '../../hooks/scene'
 
 const MIN = 60_000
@@ -19,9 +19,14 @@ type Theme = keyof typeof THEMES
 let theme: Theme = localStorage.getItem('clawd-fireplace-theme') === 'light' ? 'light' : 'dark'
 const css = (n: number) => '#' + (n & 0xffffff).toString(16).padStart(6, '0')
 
-// The shade glyphs as the dot patterns a terminal font draws, not the canvas font's blocks
-const SHADES: Record<number, number> = { 0x2591: 0.25, 0x2592: 0.5, 0x2593: 0.75 }
-const BAYER = [[0, 2], [3, 1]]
+// Braille cells, as a terminal font draws them: dots on a 2 x 4 grid. Bit i is dot i + 1
+const BRAILLE_DOTS = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [0, 3], [1, 3]] as const
+
+const dpr = () => window.devicePixelRatio || 1
+// Edges on whole device pixels, so neighbouring cells meet with no seam between them
+const snap = (v: number) => Math.round(v * dpr()) / dpr()
+const rect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) =>
+  ctx.fillRect(snap(x), snap(y), snap(x + w) - snap(x), snap(y + h) - snap(y))
 
 function size(canvas: HTMLCanvasElement, w: number, h: number) {
   const dpr = window.devicePixelRatio || 1
@@ -45,18 +50,18 @@ function cells(ctx: CanvasRenderingContext2D, d: Drawn, col0: number, row0: numb
       const at = (r * d.columns + c) * 3
       const cp = d.cells[at]!, fg = d.cells[at + 1]!, bg = d.cells[at + 2]!
       const x = (col0 + c) * cw, y = (row0 + r) * ch
-      if (!(bg & DEFAULT)) { ctx.fillStyle = css(bg); ctx.fillRect(x, y, cw, ch) }
+      if (!(bg & DEFAULT)) { ctx.fillStyle = css(bg); rect(ctx, x, y, cw, ch) }
       ctx.fillStyle = fg & DEFAULT ? THEMES[theme].fg : css(fg)
-      const shade = SHADES[cp]
-      if (cp === 0x2580) ctx.fillRect(x, y, cw, ch / 2)
-      else if (cp === 0x2584) ctx.fillRect(x, y + ch / 2, cw, ch / 2)
-      else if (shade !== undefined) {
-        const dot = Math.max(1, Math.round(cw / 4.5))
-        for (let j = 0; j * dot < ch; j++) {
-          for (let i = 0; i * dot < cw; i++) {
-            if (BAYER[j % 2]![i % 2]! / 4 < shade) ctx.fillRect(x + i * dot, y + j * dot, dot, dot)
-          }
-        }
+      if (cp === 0x2580) rect(ctx, x, y, cw, ch / 2)
+      else if (cp === 0x2584) rect(ctx, x, y + ch / 2, cw, ch / 2)
+      else if (cp >= 0x2800 && cp <= 0x28ff) {
+        const r = cw * 0.13
+        BRAILLE_DOTS.forEach(([i, j], bit) => {
+          if (!((cp - 0x2800) & (1 << bit))) return
+          ctx.beginPath()
+          ctx.arc(x + cw * (0.3 + 0.4 * i), y + ch * (0.17 + 0.22 * j), r, 0, Math.PI * 2)
+          ctx.fill()
+        })
       } else if (cp !== 0x20 && cp !== 0) ctx.fillText(String.fromCodePoint(cp), x, y + ch / 2 + 1)
     }
   }
@@ -78,30 +83,25 @@ const left = $<HTMLInputElement>('left')
 const leftOut = $<HTMLOutputElement>('leftOut')
 const widthIn = $<HTMLInputElement>('width')
 const widthOut = $<HTMLOutputElement>('widthOut')
-const ttlIn = $<HTMLSelectElement>('ttl')
 const speedIn = $<HTMLSelectElement>('speed')
 const status = $('status')
 
 let now = T0
-let ttlMs = 60 * MIN
 let lastRequestAt: number | null = now - 25 * MIN
 let pendingRequest: number | null = null
 let throwAt: number | null = null
+let pokeAt: number | null = null
 let isPlaying = true
 
 left.oninput = () => {
-  lastRequestAt = now - (ttlMs - Number(left.value) * MIN)
+  lastRequestAt = now - (TTL_MS - Number(left.value) * MIN)
   pendingRequest = null
-}
-ttlIn.onchange = () => {
-  ttlMs = Number(ttlIn.value) * MIN
-  left.min = String(-ttlMs / MIN / 4)
-  left.max = String(ttlMs / MIN)
-  lastRequestAt = now - ttlMs / 2
 }
 $('unlit').onclick = () => { lastRequestAt = null; pendingRequest = null }
 const send = () => {
-  throwAt = now
+  // As register.tsx decides: a log on a cold cache, a poke on a warm one
+  if (isColdStart(now, lastRequestAt)) throwAt = now
+  else pokeAt = now
   // The request goes out just after the prompt; the cache restarts then
   pendingRequest = now + 200
 }
@@ -121,7 +121,7 @@ function drawLive() {
   const cw = 9, ch = cw * 2
   const width = Number(widthIn.value)
   widthOut.value = `${width} cols`
-  const inp = { now, lastRequestAt, ttlMs, throwAt }
+  const inp = { now, lastRequestAt, throwAt, pokeAt }
   const d = band(inp, width)
   const t = THEMES[theme]
   const bandRows = d?.rows ?? 0
@@ -142,7 +142,7 @@ function drawLive() {
   rule(bandRows + 4)
 
   const s = derive(inp)
-  const m = lastRequestAt === null ? null : (ttlMs - (now - lastRequestAt)) / MIN
+  const m = lastRequestAt === null ? null : (TTL_MS - (now - lastRequestAt)) / MIN
   leftOut.value = m === null ? 'unlit' : `${m.toFixed(1)}m`
   if (m !== null && document.activeElement !== left) left.value = String(m)
   status.textContent = `${s.kind} · ${s.value}${d ? '' : ' · too narrow, nothing drawn'}${d && d.rows === 1 ? ' · the row alone' : ''}`
@@ -150,17 +150,19 @@ function drawLive() {
 
 // --- Every state at once ---------------------------------------------------------------
 
-type Shot = { title: string; lastAgo: number | null; isThrow?: boolean }
+// A shot with `act` replays a prompt on a loop; one without holds its time left while the clock runs
+type Shot = { title: string; lastAgo: number | null; act?: 'throw' | 'poke' }
 const SHOTS: Shot[] = [
-  { title: 'unlit, first prompt', lastAgo: null, isThrow: true },
+  { title: 'unlit, first prompt: a log', lastAgo: null, act: 'throw' },
   { title: 'burning, 50m left', lastAgo: 10 * MIN },
-  { title: 'burning, 20m left', lastAgo: 40 * MIN },
-  { title: 'prompt at 20m left', lastAgo: 40 * MIN, isThrow: true },
-  { title: 'cooling, 6m left', lastAgo: 54 * MIN },
-  { title: 'cooling, 1m left', lastAgo: 59 * MIN },
+  { title: 'prompt at 40m left: a poke', lastAgo: 20 * MIN, act: 'poke' },
+  { title: 'burning, 25m left', lastAgo: 35 * MIN },
+  { title: 'cold, 15m left', lastAgo: 45 * MIN },
+  { title: 'cold, 4m left: flickers every 30 s', lastAgo: 56 * MIN },
   { title: 'expired', lastAgo: 70 * MIN },
+  { title: 'expired, prompt: a log', lastAgo: 70 * MIN, act: 'throw' },
 ]
-// The throws replay on this loop
+// The prompts replay on this loop
 const LOOP_MS = THROW_MS + 2000
 const gallery = $('gallery')
 const shotCanvases = SHOTS.map(s => {
@@ -178,10 +180,10 @@ function drawGallery(clock: number) {
   const cw = 6
   SHOTS.forEach((s, i) => {
     const t = clock % LOOP_MS
-    const at = T0 + t
+    const at = T0 + (s.act ? t : clock)
     // As in tools/preview.ts: a prompt's request goes out right after it is sent
-    const last = s.isThrow && t > 200 ? T0 + 200 : s.lastAgo === null ? null : T0 - s.lastAgo
-    const d = frame(derive({ now: at, lastRequestAt: last, ttlMs: 60 * MIN, throwAt: s.isThrow ? T0 : null }), at)
+    const last = s.act && t > 200 ? T0 + 200 : s.lastAgo === null ? null : at - (s.act ? t : 0) - s.lastAgo
+    const d = frame(derive({ now: at, lastRequestAt: last, throwAt: s.act === 'throw' ? T0 : null, pokeAt: s.act === 'poke' ? T0 : null }), at)
     cells(size(shotCanvases[i]!, d.columns * cw, d.rows * cw * 2), d, 0, 0, cw)
   })
 }
@@ -192,9 +194,9 @@ let galleryClock = 0
 // setInterval, not requestAnimationFrame: it runs in a hidden tab and headless too
 setInterval(() => {
   if (isPlaying) {
-    // A throw plays at 1x whatever the speed, so it can be watched
-    const isThrowing = throwAt !== null && now - throwAt < THROW_MS + 500
-    now += FRAME_MS * (isThrowing ? 1 : Number(speedIn.value))
+    // A throw or poke plays at 1x whatever the speed, so it can be watched
+    const isActing = [throwAt, pokeAt].some(at => at !== null && now - at < THROW_MS + 500)
+    now += FRAME_MS * (isActing ? 1 : Number(speedIn.value))
     galleryClock += FRAME_MS
     if (pendingRequest !== null && now >= pendingRequest) { lastRequestAt = pendingRequest; pendingRequest = null }
   }

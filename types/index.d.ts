@@ -6,8 +6,10 @@ declare module 'claude-code' {
     'clawd-furnace': {
       // When the main loop last sent a request: the cache was written or read then
       lastRequestAt: Moment
-      // When the person last sent a prompt: Clawd throws a log
+      // When the person last sent a prompt to a cold cache: Clawd throws a log on
       throwAt: Moment
+      // When the person last sent a prompt to a warm cache: Clawd pokes the fire
+      pokeAt: Moment
       isHidden: boolean
     }
   }

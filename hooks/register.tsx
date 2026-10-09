@@ -1,18 +1,18 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import { COLUMNS, ROWS, ROW_COLUMNS, derive, frame, line, toBase64 } from './scene'
+import { COLUMNS, ROWS, ROW_COLUMNS, derive, frame, isColdStart, line, toBase64 } from './scene'
 import type { Inputs } from './scene'
 import type { Moment } from '../types'
 
 const lastRequestAt = atom({ plugin: 'clawd-furnace', key: 'lastRequestAt' } as const, null)
 const throwAt = atom({ plugin: 'clawd-furnace', key: 'throwAt' } as const, null)
+const pokeAt = atom({ plugin: 'clawd-furnace', key: 'pokeAt' } as const, null)
 const isHidden = atom({ plugin: 'clawd-furnace', key: 'isHidden' } as const, false)
 
 const KEY = 'fireplace'
 // 8 frames a second, as the mascot GIFs run
 const FRAME_MS = 125
-const DEFAULT_TTL_MIN = 60
 
 // The band picks a size from the room it gets: the full scene, one line, or nothing
 type Size = 'full' | 'line'
@@ -20,14 +20,14 @@ const sizeFor = (bodyColumns: number, maxRows: number): Size | null =>
   bodyColumns >= COLUMNS && maxRows >= ROWS ? 'full' : bodyColumns >= ROW_COLUMNS ? 'line' : null
 
 // A prompt the person typed, not a slash command or a notification
-export const isThrow = (text: string, origin: string | undefined) =>
+export const isTyped = (text: string, origin: string | undefined) =>
   (origin === 'composer' || origin === 'bridge' || origin === 'sdk') && !text.trimStart().startsWith('/')
 
 export const register: Register = on => {
-  let ttlMs = DEFAULT_TTL_MIN * 60_000
   // The timer reads these; the atoms hold the same and survive a reload
   let last: Moment = null
   let thrown: Moment = null
+  let poked: Moment = null
   // The band drawn now, for the timer to repaint
   let site: { requestId: string; size: Size } | null = null
   let isBusy = false
@@ -40,10 +40,9 @@ export const register: Register = on => {
   }
 
   on('session.start', async ($, e, next) => {
-    const minutes = Number(await $.env.get('CLAWD_FURNACE_TTL_MINUTES'))
-    if (minutes > 0) ttlMs = minutes * 60_000
     last = await read($, lastRequestAt)
     thrown = await read($, throwAt)
+    poked = await read($, pokeAt)
 
     $.clock.every(FRAME_MS, async () => {
       if (!site || isBusy) return
@@ -51,7 +50,7 @@ export const register: Register = on => {
       try {
         const { requestId, size } = site
         const now = await $.clock.now()
-        const cells = draw(size, { now, lastRequestAt: last, ttlMs, throwAt: thrown })
+        const cells = draw(size, { now, lastRequestAt: last, throwAt: thrown, pokeAt: poked })
         if (cells === shown) return
         const r = await $.ui.blit({ requestId, key: KEY, cells })
         // Gone or redrawn at another size: wait for the next render
@@ -79,12 +78,18 @@ export const register: Register = on => {
   })
 
   on('prompt.submit', async ($, e, next) => {
-    if (isThrow(e.text, e.origin?.kind)) {
-      // Not awaited: the animation never holds up a prompt
+    if (isTyped(e.text, e.origin?.kind)) {
+      // Not awaited: the animation never holds up a prompt.
+      // A cold cache gets a log thrown on; a warm one a poke. `last` is read now, before this prompt's request
+      const before = last
       $.clock.now()
         .then(now => {
-          thrown = now
-          return update($, throwAt, () => now)
+          if (isColdStart(now, before)) {
+            thrown = now
+            return update($, throwAt, () => now)
+          }
+          poked = now
+          return update($, pokeAt, () => now)
         })
         .catch(() => {})
     }
@@ -116,8 +121,8 @@ export const register: Register = on => {
     const inp: Inputs = {
       now: await $.clock.now(),
       lastRequestAt: await read($, lastRequestAt),
-      ttlMs,
       throwAt: await read($, throwAt),
+      pokeAt: await read($, pokeAt),
     }
     shown = draw(size, inp)
     const raster = (

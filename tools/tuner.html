@@ -30,9 +30,8 @@
 <header>
   <h1>Clawd fireplace</h1>
   <label>time left <input id="left" type="range" min="-15" max="60" step="0.1" value="35"><output id="leftOut"></output></label>
-  <label>cache <select id="ttl"><option value="60">1 hour</option><option value="5">5 min</option></select></label>
   <label>speed <select id="speed"><option value="1">1x</option><option value="30">30x</option><option value="300">300x</option></select></label>
-  <label>terminal <input id="width" type="range" min="30" max="160" value="120"><output id="widthOut"></output></label>
+  <label>terminal <input id="width" type="range" min="20" max="160" value="100"><output id="widthOut"></output></label>
   <button id="send">send prompt</button>
   <button id="unlit">unlit</button>
   <button id="play">pause</button>
@@ -56,7 +55,7 @@
     H: 4608352,
     D: 1839888,
     k: 3348751,
-    I: 2763312,
+    K: 8226192,
     L: 9132587,
     l: 6175258,
     W: 12488284,
@@ -70,149 +69,172 @@
   var artWidth = (art) => Math.max(0, ...art.map((l) => l.length));
   var CLAWD = {
     stand: [
-      "..cCCCCCCCCCCCC..",
-      "..cCCCCCCCCCCCC..",
-      "..cCCECCCCCCCEC..",
-      "..cCCECCCCCCCEC..",
-      "cCCCCCCCCCCCCCCCC",
-      "cCCCCCCCCCCCCCCCC",
-      "..cCCCCCCCCCCCC..",
-      "..cCCCCCCCCCCCC..",
-      "..c.C.......C.C..",
-      "..c.C.......C.C.."
+      ".cCCCCCCCC..",
+      ".cCECCCCEC..",
+      ".cCECCCCEC..",
+      "cCCCCCCCCCC.",
+      ".cCCCCCCCC..",
+      ".cCCCCCCCC..",
+      ".c.C...C.C.."
+    ],
+    warm: [
+      ".cCCCCCCCC..",
+      ".cCECCCCEC..",
+      ".cCECCCCEC..",
+      ".cCCCCCCCCCC",
+      ".cCCCCCCCCc.",
+      ".cCCCCCCCC..",
+      ".c.C...C.C.."
+    ],
+    rub: [
+      ".cCCCCCCCC..",
+      ".cCECCCCEC..",
+      ".cCECCCCEC..",
+      ".cCCCCCCCCC.",
+      ".cCCCCCCCCcc",
+      ".cCCCCCCCC..",
+      ".c.C...C.C.."
     ],
     front: [
-      "..CCCCCCCCCCCCC..",
-      "..CCCCCCCCCCCCC..",
-      "..CCECCCCCCCECC..",
-      "..CCECCCCCCCECC..",
-      "CCCCCCCCCCCCCCCCC",
-      "CCCCCCCCCCCCCCCCC",
-      "..CCCCCCCCCCCCC..",
-      "..CCCCCCCCCCCCC..",
-      "..C.C.......C.C..",
-      "..C.C.......C.C.."
+      ".CCCCCCCCC..",
+      ".CECCCCCEC..",
+      ".CECCCCCEC..",
+      "CCCCCCCCCCC.",
+      ".CCCCCCCCC..",
+      ".CCCCCCCCC..",
+      ".C.C...C.C.."
+    ],
+    step: [
+      ".cCCCCCCCC..",
+      ".cCECCCCEC..",
+      ".cCECCCCEC..",
+      "cCCCCCCCCCC.",
+      ".cCCCCCCCC..",
+      ".cCCCCCCCC..",
+      "..cC...CC..."
     ],
     crouch: [
-      ".................",
-      "..cCCCCCCCCCCCC..",
-      "..cCCCCCCCCCCCC..",
-      "..cCCCCCCCCCCCC..",
-      "..cCEECCCCCCEEC..",
-      "cCCCCCCCCCCCCCC..",
-      "cCCCCCCCCCCCCCC..",
-      "..cCCCCCCCCCCCCCC",
-      "..cCCCCCCCCCCCCCC",
-      ".c.C.........C.C."
+      "............",
+      ".cCCCCCCCC..",
+      ".cCECCCCEC..",
+      ".cCCCCCCCC..",
+      "ccCCCCCCCC..",
+      ".cCCCCCCCCCC",
+      "c.C.....C.C."
     ],
     toss: [
-      "..cCCCCCCCCCCCC....",
-      "..cCCECCCCCCCEC....",
-      "..cCCECCCCCCCEC..CC",
-      "..cCCCCCCCCCCCC.CC.",
-      "cCCCCCCCCCCCCCCCC..",
-      "cCCCCCCCCCCCCCC....",
-      "..cCCCCCCCCCCCC....",
-      "..cCCCCCCCCCCCC....",
-      "..c.C.......C.C....",
-      "..c.C.......C.C...."
+      ".cCCCCCCCC..",
+      ".cCECCCCEC.C",
+      ".cCECCCCECC.",
+      "cCCCCCCCCC..",
+      ".cCCCCCCCC..",
+      ".cCCCCCCCC..",
+      ".c.C...C.C.."
     ],
-    hop: [
-      "..cCCCCCCCCCCCC..",
-      "..cCCCCCCCCCCCC..",
-      "..cCCECCCCCCCEC..",
-      "..cCCECCCCCCCEC..",
-      "cCCCCCCCCCCCCCCCC",
-      "cCCCCCCCCCCCCCCCC",
-      "..cCCCCCCCCCCCC..",
-      "..cCCCCCCCCCCCC..",
-      "..c.C.......C.C..",
-      ".c.C.......C.C..."
+    poke: [
+      ".cCCCCCCCC..",
+      ".cCECCCCEC..",
+      ".cCECCCCEC..",
+      "cCCCCCCCCCCC",
+      ".cCCCCCCCC..",
+      ".cCCCCCCCC..",
+      ".c.C...C.C.."
     ]
   };
   var shut = (art) => art.map((l) => l.replaceAll("E", "C"));
+  var turned = (art) => {
+    const w = artWidth(art);
+    return art.map((l) => [...l.padEnd(w, ".")].reverse().join(""));
+  };
   var SCARF = [
     "",
     "",
     "",
-    "",
-    "..bBBBBBBBBBBBB..",
-    "..bbbbbbbbbbbBB..",
-    "............bB...",
-    "............Bb..."
+    ".bBBBBBBBB",
+    "..Bb",
+    "..bB"
   ];
   var WOODPILE = [
-    ".LLLLW",
-    ".llllW",
-    "LLLLW.",
-    "llllW.",
-    ".LLLLW",
-    ".llllW"
+    ".LLLW",
+    "LLLLW",
+    "llllW"
   ];
-  var LOG = ["LLLW", "lllW"];
+  var LOG = ["LLW", "llW"];
   var FIREPLACE = [
-    "RRRRRRRRRRRRRRRRRRRR",
-    "HHHHHHHHHHHHHHHHHHHH",
-    ".PPPPPRRRRRRRRPPPPH.",
-    ".PPPRRDDDDDDDDRRPPH.",
-    ".PPRDDkkDkkkDkkDRPH.",
-    ".PRDkkDkkkDkkkDkDRH.",
-    ".PRDkkkDkkkDkkkDDRH.",
-    ".PRDkDkkkDkkkDkkDRH.",
-    ".PRDLLLLLWLLLLLWDRH.",
-    ".PRIlllllIlllllIIRH.",
-    "RRRRRRRRRRRRRRRRRRRR",
-    "HHHHHHHHHHHHHHHHHHHH"
+    "RRRRRRRRRRRRRR",
+    ".HHHHHHHHHHHH.",
+    ".PPRRRRRRRRPH.",
+    ".PRDkkDkkDkRH.",
+    ".PRkDkkDkkDRH.",
+    ".PRDkDkkDkkRH.",
+    ".PRLLWlLLLWRH.",
+    "RRRRRRRRRRRRRR"
   ];
-  var BED = { x: 4, y: 7, w: 12 };
-  var LOGS_ROW = 8;
+  var BED = { x: 3, y: 5, w: 8 };
+  var LOGS_ROW = 6;
+  var HEARTH_ROW = 7;
   var TIPS = [
-    "..F.y..y.F..",
-    "y..y.F..F.F.",
-    ".F..F.F..F.y",
-    "F.F..F.y..y.",
-    ".F.y..y.F..F",
-    "..y.F..F.F..",
-    "F..F.F..F.y.",
-    ".F..F.y..y.F",
-    "F.y..y.F..F.",
-    ".y.F..F.F..F",
-    "..F.F..F.y..",
-    "F..F.y..y.F.",
-    ".y..y.F..F.F",
-    "y.F..F.F..F.",
-    ".F.F..F.y..y",
-    "y..y.F..F.F."
+    "..F.y..y",
+    "y..y.F..",
+    ".F..F.F.",
+    "F.F..F.y",
+    ".F.y..y.",
+    "..y.F..F",
+    "F..F.F..",
+    ".F..F.y.",
+    "F.y..y.F",
+    ".y.F..F.",
+    "..F.F..F",
+    "F..F.y..",
+    ".y..y.F.",
+    "y.F..F.F",
+    ".F.F..F.",
+    "y..y.F.."
   ];
-  var PUFFS = [[".ss.", "ssss"], ["ss"], ["s"]];
+  var PUFFS = [[".s.", "sss"], ["ss"], ["s"]];
 
   // hooks/scene.ts
-  var COLD_MS = 10 * 60 * 1000;
-  var T_PICK = 375;
-  var T_LIFT = 750;
-  var T_RELEASE = 1000;
-  var T_IMPACT = 1375;
-  var THROW_MS = 2000;
+  var MIN = 60000;
+  var TTL_MS = 60 * MIN;
+  var COLD_MS = 20 * MIN;
+  var LOW_MS = 5 * MIN;
+  var FLICKER_EVERY_MS = 30000;
+  var FLICKER_MS = 1500;
+  var T_WALK = 500;
+  var T_PICK = 750;
+  var T_LIFT = 1000;
+  var T_RELEASE = 1250;
+  var T_IMPACT = 1625;
+  var T_TURN = 1875;
+  var T_BACK = 2000;
+  var THROW_MS = 2750;
+  var P_REACH = 250;
+  var P_JABS = [500, 1000];
+  var P_JAB_MS = 250;
+  var P_DONE = 1500;
+  var POKE_MS = 1750;
   var FLAME_MS = 160;
   var DEFAULT = 16777216;
   var NONE = -1;
   var TONE = { clay: 14251863, warn: 13666846, bad: 14242639, track: 6249560, dim: 9078144 };
-  var coldMs = (ttlMs) => Math.min(COLD_MS, ttlMs / 3);
-  function phase({ now, lastRequestAt, ttlMs }) {
+  function phase({ now, lastRequestAt }) {
     if (lastRequestAt === null)
       return { kind: "unlit" };
-    const remaining = ttlMs - (now - lastRequestAt);
+    const remaining = TTL_MS - (now - lastRequestAt);
     if (remaining <= 0)
       return { kind: "expired", since: -remaining };
-    if (remaining < coldMs(ttlMs))
-      return { kind: "cold", remaining, cold: 1 - remaining / coldMs(ttlMs) };
+    if (remaining < COLD_MS)
+      return { kind: "cold", remaining, cold: 1 - remaining / COLD_MS };
     return { kind: "burning", remaining };
   }
-  function intensity(p, ttlMs) {
+  var isColdStart = (now, lastRequestAt) => {
+    const k = phase({ now, lastRequestAt }).kind;
+    return k === "unlit" || k === "expired";
+  };
+  function intensity(p) {
     if (p.kind !== "burning")
       return 0;
-    const cold = coldMs(ttlMs);
-    return 0.4 + 0.6 * ((p.remaining - cold) / Math.max(1, ttlMs - cold));
+    return 0.4 + 0.6 * ((p.remaining - COLD_MS) / (TTL_MS - COLD_MS));
   }
   function clock(ms) {
     const s = Math.max(0, Math.ceil(ms / 1000));
@@ -232,59 +254,71 @@
     t = Math.imul(t, 739982445);
     return ((t ^ t >>> 13) >>> 0) / 4294967296;
   };
+  var within = (now, at, length) => {
+    if (at === null)
+      return null;
+    const t = now - at;
+    return t >= 0 && t < length ? t : null;
+  };
   function derive(inp) {
     const p = phase(inp);
-    const since = inp.throwAt === null ? Infinity : inp.now - inp.throwAt;
-    const throwMs = since >= 0 && since < THROW_MS ? since : null;
-    const flare = since >= T_IMPACT ? 0.8 * Math.exp(-(since - T_IMPACT) / 1600) : 0;
-    const s = { kind: p.kind, fire: clamp(intensity(p, inp.ttlMs) + flare), cold: 0, throwMs, fraction: 0, value: "" };
-    if (p.kind === "burning") {
-      s.fraction = p.remaining / inp.ttlMs;
+    const throwMs = within(inp.now, inp.throwAt, THROW_MS);
+    const pokeMs = throwMs === null ? within(inp.now, inp.pokeAt, POKE_MS) : null;
+    let flare = 0;
+    const sinceThrow = inp.throwAt === null ? -1 : inp.now - inp.throwAt;
+    if (sinceThrow >= T_IMPACT)
+      flare = 0.8 * Math.exp(-(sinceThrow - T_IMPACT) / 1600);
+    const sincePoke = inp.pokeAt === null ? -1 : inp.now - inp.pokeAt;
+    for (const jab of P_JABS)
+      if (sincePoke >= jab)
+        flare = Math.max(flare, 0.5 * Math.exp(-(sincePoke - jab) / 700));
+    const fire = throwMs !== null && throwMs < T_IMPACT ? 0 : clamp(intensity(p) + flare);
+    const isStoked = pokeMs !== null && P_JABS.some((j) => pokeMs >= j && pokeMs < j + P_JAB_MS);
+    const s = { kind: p.kind, fire, cold: 0, throwMs, pokeMs, isStoked, fraction: 0, value: "", isFlickerOff: false };
+    if (p.kind === "burning" || p.kind === "cold") {
+      s.fraction = p.remaining / TTL_MS;
       s.value = clock(p.remaining);
-    } else if (p.kind === "cold") {
-      s.cold = p.cold;
-      s.fraction = p.remaining / inp.ttlMs;
-      s.value = clock(p.remaining);
-    } else if (p.kind === "expired") {
-      s.value = "out";
-    } else {
-      s.value = "–";
     }
+    if (p.kind === "cold") {
+      s.cold = p.cold;
+      const t = inp.now % FLICKER_EVERY_MS;
+      s.isFlickerOff = p.remaining < LOW_MS && t < FLICKER_MS && Math.floor(t / 250) % 2 === 0;
+    }
+    if (p.kind === "expired")
+      s.value = "out";
+    if (p.kind === "unlit")
+      s.value = "–";
     return s;
   }
-  var FULL = "▓";
-  var RAMP = ["░", "░", "▒", "▓"];
-  var fill = (pct, width) => Math.max(0, Math.min(width, Math.round(pct / 100 * width)));
-  function loudMeter(pct, width) {
-    const n = fill(pct, width);
-    const fade = n === width ? [] : [...RAMP].reverse().slice(0, Math.min(2, n));
-    return [FULL.repeat(n - fade.length) + fade.join(""), "·".repeat(width - n)];
+  var FULL = "⣿";
+  var EDGE = "⡪";
+  var TRACK = "·";
+  function loudMeter(fraction, width) {
+    const n = fraction <= 0 ? 0 : Math.max(1, Math.min(width, Math.ceil(fraction * width)));
+    const body = n >= 2 && n < width ? FULL.repeat(n - 1) + EDGE : FULL.repeat(n);
+    return [body, TRACK.repeat(width - n)];
   }
-  var fit = (s, w) => s.length > w ? s.slice(0, w) : s.padEnd(w);
-  var ROW = { state: 9, name: 6, bar: 12, value: 4 };
-  var ROW_COLUMNS = 2 + ROW.state + ROW.name + ROW.bar + 1 + ROW.value;
-  var MARK = {
-    unlit: ["·", "unlit", TONE.dim],
-    burning: ["✱", "burning", TONE.clay],
-    cold: ["!", "cooling", TONE.warn],
-    expired: ["!", "expired", TONE.bad]
-  };
+  var ROW = { bar: 12, value: 4 };
+  var ROW_COLUMNS = ROW.bar + 1 + ROW.value;
+  var TONES = { unlit: TONE.dim, burning: TONE.clay, cold: TONE.warn, expired: TONE.bad };
   function row(s) {
-    const [mark, word, tone] = MARK[s.kind];
-    const [body, rest] = loudMeter(s.fraction * 100, ROW.bar);
+    const tone = TONES[s.kind];
+    let [body, rest] = loudMeter(s.fraction, ROW.bar);
+    if (s.isFlickerOff && body.length > 0) {
+      body = body.slice(0, -1);
+      rest = TRACK + rest;
+    }
     return [
-      [`${mark} ${fit(word, ROW.state)}`, tone],
-      [fit("cache", ROW.name), DEFAULT],
       [body, tone],
-      [rest, TONE.track],
+      [rest, s.kind === "expired" ? TONE.bad : TONE.track],
       [` ${s.value.padStart(ROW.value)}`, TONE.dim]
     ];
   }
   var STAGE = (() => {
-    const pileX = 18;
+    const h = FIREPLACE.length;
+    const pileX = 14;
     const fireX = pileX + artWidth(WOODPILE);
     const w = fireX + artWidth(FIREPLACE);
-    const h = FIREPLACE.length;
     return { w, h, clawdX: 0, clawdY: h - 1 - CLAWD.stand.length, pileX, pileY: h - 1 - WOODPILE.length, fireX };
   })();
   var GAP = 2;
@@ -313,7 +347,7 @@
       put(x, h - 1, PAL.G);
     sprite(WOODPILE, STAGE.pileX, STAGE.pileY);
     drawFireplace(s, tick, sprite, put);
-    drawClawd(s, now, sprite);
+    drawClawd(s, now, sprite, put);
     const cells = new Uint32Array(COLUMNS * ROWS * 3).fill(0);
     for (let i = 0;i < COLUMNS * ROWS; i++) {
       cells[i * 3] = 32;
@@ -352,8 +386,8 @@
   }
   function drawFireplace(s, tick, sprite, put) {
     const fx = STAGE.fireX;
-    const lit = s.kind === "burning" || s.fire > 0;
-    const glow = lit ? 0.25 + 0.45 * s.fire : s.kind === "cold" ? 0.18 * (1 - s.cold) : 0;
+    const isLit = s.fire > 0;
+    const glow = isLit ? 0.25 + 0.45 * s.fire : s.kind === "cold" ? 0.18 * (1 - s.cold) : 0;
     sprite(FIREPLACE, fx, 0, (ch) => {
       if (ch === "k")
         return mix(PAL.k, 9058850, glow);
@@ -362,13 +396,13 @@
       return PAL[ch];
     });
     for (let x = BED.x - 1;x < BED.x + BED.w + 1; x++)
-      put(fx + x, 10, mix(PAL.R, 16096779, glow * 0.45));
+      put(fx + x, HEARTH_ROW, mix(PAL.R, 16096779, glow * 0.45));
     const x0 = fx + BED.x;
-    if (lit) {
-      const rows = s.fire >= 0.9 ? 4 : s.fire >= 0.7 ? 3 : 2;
+    if (isLit) {
+      const rows = s.fire >= 0.75 ? 3 : 2;
       for (let r = 0;r < rows; r++) {
         const y = BED.y - r;
-        const inset = r === 0 ? 0 : Math.min(4, r + 1);
+        const inset = r === 0 ? 0 : Math.min(3, r + 1);
         for (let i = inset;i < BED.w - inset; i++) {
           let ch;
           if (r === 0)
@@ -381,10 +415,11 @@
             put(x0 + i, y, PAL[ch]);
         }
       }
-      if (s.fire > 0.9) {
+      if (s.fire > 0.9 || s.isStoked) {
         for (let k = 0;k < 3; k++) {
-          if (hash(tick, 100 + k) < 0.5)
-            put(x0 + 2 + Math.floor(hash(tick, 200 + k) * (BED.w - 4)), BED.y - rows - Math.floor(hash(tick, 300 + k) * 2), PAL.y);
+          const y = BED.y - rows - Math.floor(hash(tick, 300 + k) * 2);
+          if (y >= 2 && hash(tick, 100 + k) < 0.6)
+            put(x0 + 1 + Math.floor(hash(tick, 200 + k) * (BED.w - 2)), y, PAL.y);
         }
       }
       return;
@@ -394,59 +429,102 @@
         if (hash(i, 7) < 0.75 - 0.6 * s.cold)
           put(x0 + i, LOGS_ROW, PAL[(i + tick) % 3 === 0 ? "F" : "f"]);
       }
-      smoke(x0 + 5, 0.5, tick, sprite);
+      smoke(x0 + 3, 0.5, tick, sprite);
       return;
     }
     if (s.kind === "expired") {
       for (let i = 0;i < BED.w; i++)
-        if (i % 6 !== 5)
+        if (i % 5 !== 4)
           put(x0 + i, LOGS_ROW, PAL.a);
-      smoke(x0 + 4, 1, tick, sprite);
+      smoke(x0 + 2, 1, tick, sprite);
     }
   }
   function smoke(x, strength, tick, sprite) {
     const t = tick % 16;
-    if (t >= 10)
+    if (t >= 8)
       return;
     const y = LOGS_ROW - 1 - Math.floor(t / 2);
     if (y < 3)
       return;
-    const puff = PUFFS[Math.min(PUFFS.length - 1, Math.floor(t / 4))];
-    const color = mix(PAL.D, PAL.s, strength * (1 - t / 14));
+    const puff = PUFFS[Math.min(PUFFS.length - 1, Math.floor(t / 3))];
+    const color = mix(PAL.D, PAL.s, strength * (1 - t / 12));
     sprite(puff, x + (t >> 2), y - puff.length + 1, (ch) => ch === "s" ? color : undefined);
   }
-  function drawClawd(s, now, sprite) {
+  function drawClawd(s, now, sprite, put) {
     const { clawdX: x, clawdY: y } = STAGE;
     if (s.throwMs !== null)
       return drawThrow(Math.floor(s.throwMs / 125) * 125, sprite);
+    if (s.pokeMs !== null)
+      return drawPoke(Math.floor(s.pokeMs / 125) * 125, sprite, put);
     const isBlink = now % 4100 < 160;
     const isFront = now % 17000 > 15200;
-    const art = isFront ? CLAWD.front : CLAWD.stand;
+    const isCold = s.kind === "cold" || s.kind === "expired";
+    const isRubbing = now % 6000 < 2000;
+    let art;
+    if (isFront)
+      art = CLAWD.front;
+    else if (isCold)
+      art = isRubbing && Math.floor(now / 250) % 2 === 1 ? CLAWD.rub : CLAWD.warm;
+    else if (s.kind === "burning")
+      art = CLAWD.warm;
+    else
+      art = CLAWD.stand;
     sprite(isBlink ? shut(art) : art, x, y);
-    if (s.kind === "cold" || s.kind === "expired")
+    if (isCold)
       sprite(SCARF, x, y);
   }
+  function walk(t, from, to, face, sprite) {
+    const i = Math.min(3, Math.floor(t / 125));
+    const x = from + Math.sign(to - from) * [0, 1, 1, 2][i];
+    sprite(face(i % 2 === 0 ? CLAWD.step : CLAWD.stand), x, STAGE.clawdY);
+  }
+  var facing = (a) => a;
   function drawThrow(t, sprite) {
-    const { clawdX: x, clawdY: y, fireX } = STAGE;
-    if (t < T_PICK) {
-      sprite(CLAWD.crouch, x, y);
-    } else if (t < T_LIFT) {
+    const { clawdY: y, fireX } = STAGE;
+    const x = 2;
+    if (t < T_WALK)
+      return walk(t, 0, x, facing, sprite);
+    if (t < T_PICK)
+      return sprite(CLAWD.crouch, x, y);
+    if (t < T_LIFT) {
       sprite(CLAWD.stand, x, y);
-      sprite(LOG, x + 14, y + 3);
-    } else if (t < T_RELEASE) {
-      sprite(CLAWD.toss, x, y);
-      sprite(LOG, x + 16, y);
-    } else if (t < T_IMPACT) {
-      const k = (t - T_RELEASE) / (T_IMPACT - T_RELEASE);
-      sprite(k < 0.5 ? CLAWD.toss : CLAWD.stand, x, y);
-      sprite(LOG, lerp(x + 16, fireX + BED.x + 4, k), lerp(y, BED.y, k * k));
-    } else {
-      const k = (t - T_IMPACT) / (THROW_MS - T_IMPACT);
-      if (k < 0.4)
-        sprite(shut(CLAWD.hop), x, y - 1);
-      else
-        sprite(CLAWD.stand, x, y);
+      return sprite(LOG, x + 10, y + 2);
     }
+    if (t < T_RELEASE) {
+      sprite(CLAWD.toss, x, y);
+      return sprite(LOG, x + 10, y);
+    }
+    if (t < T_IMPACT) {
+      const k = (t - T_RELEASE) / (T_IMPACT - T_RELEASE);
+      sprite(CLAWD.toss, x, y);
+      return sprite(LOG, lerp(x + 10, fireX + BED.x + 2, k), lerp(y + 1, BED.y - 1, k));
+    }
+    if (t < T_TURN)
+      return sprite(shut(CLAWD.stand), x, y);
+    if (t < T_BACK)
+      return sprite(turned(CLAWD.stand), x, y);
+    if (t < T_BACK + 500)
+      return walk(t - T_BACK, x, 0, turned, sprite);
+    if (t < T_BACK + 625)
+      return sprite(turned(CLAWD.stand), 0, y);
+    sprite(CLAWD.stand, 0, y);
+  }
+  function drawPoke(t, sprite, put) {
+    const { clawdY: y, fireX } = STAGE;
+    const x = 1;
+    if (t < P_REACH)
+      return walk(t, 0, x, facing, sprite);
+    if (t >= P_DONE) {
+      const back = t - P_DONE < 125;
+      return sprite(back ? CLAWD.step : CLAWD.stand, back ? x : 0, y);
+    }
+    sprite(CLAWD.poke, x, y);
+    const isIn = P_JABS.some((j) => t >= j && t < j + P_JAB_MS);
+    const tipX = fireX + BED.x + (isIn ? 1 : 0);
+    for (let px = x + 12;px < tipX - 1; px++)
+      put(px, y + 3, PAL.K);
+    put(tipX - 1, y + 4, PAL.K);
+    put(tipX, y + 5, isIn ? PAL.F : PAL.K);
   }
   function line(s) {
     const cells = new Uint32Array(ROW_COLUMNS * 3);
@@ -463,7 +541,7 @@
   }
 
   // tools/tuner/main.ts
-  var MIN = 60000;
+  var MIN2 = 60000;
   var FRAME_MS = 125;
   var DEFAULT2 = 16777216;
   var MARK_COLUMNS = 5;
@@ -474,8 +552,10 @@
   };
   var theme = localStorage.getItem("clawd-fireplace-theme") === "light" ? "light" : "dark";
   var css = (n) => "#" + (n & 16777215).toString(16).padStart(6, "0");
-  var SHADES = { 9617: 0.25, 9618: 0.5, 9619: 0.75 };
-  var BAYER = [[0, 2], [3, 1]];
+  var BRAILLE_DOTS = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [0, 3], [1, 3]];
+  var dpr = () => window.devicePixelRatio || 1;
+  var snap = (v) => Math.round(v * dpr()) / dpr();
+  var rect = (ctx, x, y, w, h) => ctx.fillRect(snap(x), snap(y), snap(x + w) - snap(x), snap(y + h) - snap(y));
   function size(canvas, w, h) {
     const dpr = window.devicePixelRatio || 1;
     if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
@@ -501,22 +581,22 @@
         const x = (col0 + c) * cw, y = (row0 + r) * ch;
         if (!(bg & DEFAULT2)) {
           ctx.fillStyle = css(bg);
-          ctx.fillRect(x, y, cw, ch);
+          rect(ctx, x, y, cw, ch);
         }
         ctx.fillStyle = fg & DEFAULT2 ? THEMES[theme].fg : css(fg);
-        const shade = SHADES[cp];
         if (cp === 9600)
-          ctx.fillRect(x, y, cw, ch / 2);
+          rect(ctx, x, y, cw, ch / 2);
         else if (cp === 9604)
-          ctx.fillRect(x, y + ch / 2, cw, ch / 2);
-        else if (shade !== undefined) {
-          const dot = Math.max(1, Math.round(cw / 4.5));
-          for (let j = 0;j * dot < ch; j++) {
-            for (let i = 0;i * dot < cw; i++) {
-              if (BAYER[j % 2][i % 2] / 4 < shade)
-                ctx.fillRect(x + i * dot, y + j * dot, dot, dot);
-            }
-          }
+          rect(ctx, x, y + ch / 2, cw, ch / 2);
+        else if (cp >= 10240 && cp <= 10495) {
+          const r = cw * 0.13;
+          BRAILLE_DOTS.forEach(([i, j], bit) => {
+            if (!(cp - 10240 & 1 << bit))
+              return;
+            ctx.beginPath();
+            ctx.arc(x + cw * (0.3 + 0.4 * i), y + ch * (0.17 + 0.22 * j), r, 0, Math.PI * 2);
+            ctx.fill();
+          });
         } else if (cp !== 32 && cp !== 0)
           ctx.fillText(String.fromCodePoint(cp), x, y + ch / 2 + 1);
       }
@@ -536,31 +616,27 @@
   var leftOut = $("leftOut");
   var widthIn = $("width");
   var widthOut = $("widthOut");
-  var ttlIn = $("ttl");
   var speedIn = $("speed");
   var status = $("status");
   var now = T0;
-  var ttlMs = 60 * MIN;
-  var lastRequestAt = now - 25 * MIN;
+  var lastRequestAt = now - 25 * MIN2;
   var pendingRequest = null;
   var throwAt = null;
+  var pokeAt = null;
   var isPlaying = true;
   left.oninput = () => {
-    lastRequestAt = now - (ttlMs - Number(left.value) * MIN);
+    lastRequestAt = now - (TTL_MS - Number(left.value) * MIN2);
     pendingRequest = null;
-  };
-  ttlIn.onchange = () => {
-    ttlMs = Number(ttlIn.value) * MIN;
-    left.min = String(-ttlMs / MIN / 4);
-    left.max = String(ttlMs / MIN);
-    lastRequestAt = now - ttlMs / 2;
   };
   $("unlit").onclick = () => {
     lastRequestAt = null;
     pendingRequest = null;
   };
   var send = () => {
-    throwAt = now;
+    if (isColdStart(now, lastRequestAt))
+      throwAt = now;
+    else
+      pokeAt = now;
     pendingRequest = now + 200;
   };
   $("send").onclick = send;
@@ -590,7 +666,7 @@
     const cw = 9, ch = cw * 2;
     const width = Number(widthIn.value);
     widthOut.value = `${width} cols`;
-    const inp = { now, lastRequestAt, ttlMs, throwAt };
+    const inp = { now, lastRequestAt, throwAt, pokeAt };
     const d = band(inp, width);
     const t = THEMES[theme];
     const bandRows = d?.rows ?? 0;
@@ -612,20 +688,21 @@
     ctx.fillText("❯", cw, (bandRows + 3.5) * ch);
     rule(bandRows + 4);
     const s = derive(inp);
-    const m = lastRequestAt === null ? null : (ttlMs - (now - lastRequestAt)) / MIN;
+    const m = lastRequestAt === null ? null : (TTL_MS - (now - lastRequestAt)) / MIN2;
     leftOut.value = m === null ? "unlit" : `${m.toFixed(1)}m`;
     if (m !== null && document.activeElement !== left)
       left.value = String(m);
     status.textContent = `${s.kind} · ${s.value}${d ? "" : " · too narrow, nothing drawn"}${d && d.rows === 1 ? " · the row alone" : ""}`;
   }
   var SHOTS = [
-    { title: "unlit, first prompt", lastAgo: null, isThrow: true },
-    { title: "burning, 50m left", lastAgo: 10 * MIN },
-    { title: "burning, 20m left", lastAgo: 40 * MIN },
-    { title: "prompt at 20m left", lastAgo: 40 * MIN, isThrow: true },
-    { title: "cooling, 6m left", lastAgo: 54 * MIN },
-    { title: "cooling, 1m left", lastAgo: 59 * MIN },
-    { title: "expired", lastAgo: 70 * MIN }
+    { title: "unlit, first prompt: a log", lastAgo: null, act: "throw" },
+    { title: "burning, 50m left", lastAgo: 10 * MIN2 },
+    { title: "prompt at 40m left: a poke", lastAgo: 20 * MIN2, act: "poke" },
+    { title: "burning, 25m left", lastAgo: 35 * MIN2 },
+    { title: "cold, 15m left", lastAgo: 45 * MIN2 },
+    { title: "cold, 4m left: flickers every 30 s", lastAgo: 56 * MIN2 },
+    { title: "expired", lastAgo: 70 * MIN2 },
+    { title: "expired, prompt: a log", lastAgo: 70 * MIN2, act: "throw" }
   ];
   var LOOP_MS = THROW_MS + 2000;
   var gallery = $("gallery");
@@ -643,17 +720,17 @@
     const cw = 6;
     SHOTS.forEach((s, i) => {
       const t = clock % LOOP_MS;
-      const at = T0 + t;
-      const last = s.isThrow && t > 200 ? T0 + 200 : s.lastAgo === null ? null : T0 - s.lastAgo;
-      const d = frame(derive({ now: at, lastRequestAt: last, ttlMs: 60 * MIN, throwAt: s.isThrow ? T0 : null }), at);
+      const at = T0 + (s.act ? t : clock);
+      const last = s.act && t > 200 ? T0 + 200 : s.lastAgo === null ? null : at - (s.act ? t : 0) - s.lastAgo;
+      const d = frame(derive({ now: at, lastRequestAt: last, throwAt: s.act === "throw" ? T0 : null, pokeAt: s.act === "poke" ? T0 : null }), at);
       cells(size(shotCanvases[i], d.columns * cw, d.rows * cw * 2), d, 0, 0, cw);
     });
   }
   var galleryClock = 0;
   setInterval(() => {
     if (isPlaying) {
-      const isThrowing = throwAt !== null && now - throwAt < THROW_MS + 500;
-      now += FRAME_MS * (isThrowing ? 1 : Number(speedIn.value));
+      const isActing = [throwAt, pokeAt].some((at) => at !== null && now - at < THROW_MS + 500);
+      now += FRAME_MS * (isActing ? 1 : Number(speedIn.value));
       galleryClock += FRAME_MS;
       if (pendingRequest !== null && now >= pendingRequest) {
         lastRequestAt = pendingRequest;
