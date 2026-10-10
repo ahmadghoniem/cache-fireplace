@@ -20,7 +20,7 @@ const rasters = (n: unknown): Node[] => {
   return [...(node.type === 'Raster' ? [node] : []), ...rasters(node.children ?? node.props?.children)]
 }
 const mount = async ($: any, bodyColumns = 120, hasSurvey = false) => {
-  const ui = await $.ui.mount({ plugin: 'clawd-furnace', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey, isWorking: false, maxRows: 12, bodyColumns } as never })
+  const ui = await $.ui.mount({ plugin: 'cache-fireplace', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey, isWorking: false, maxRows: 12, bodyColumns } as never })
   const tree = await ui.drawn()
   await ui.unmount()
   return tree
@@ -194,7 +194,7 @@ test('cold and expired share the scarf; the fireplace tells them apart', () => {
 
 test('the frame timer repaints the mounted band and stops once it is gone', async ($, on) => {
   const time = await world($, on)
-  const ui = await $.ui.mount({ plugin: 'clawd-furnace', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 12, bodyColumns: 120 } as never })
+  const ui = await $.ui.mount({ plugin: 'cache-fireplace', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 12, bodyColumns: 120 } as never })
   band.isMounted = true
   await step($)
   await time.advance(1000)

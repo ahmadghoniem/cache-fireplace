@@ -3,7 +3,7 @@ export type Moment = number | null
 
 declare module 'claude-code' {
   interface PluginState {
-    'clawd-furnace': {
+    'cache-fireplace': {
       // When the main loop last sent a request: the cache was written or read then
       lastRequestAt: Moment
       // When the person last sent a prompt to a cold cache: Clawd throws a log on

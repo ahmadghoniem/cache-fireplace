@@ -1,4 +1,4 @@
-# clawd-furnace
+# cache-fireplace
 
 A Claude Code mod: Clawd keeps a fireplace burning in the band above the prompt, for as long as the prompt cache stays warm.
 
@@ -12,6 +12,6 @@ A Claude Code mod: Clawd keeps a fireplace burning in the band above the prompt,
 ## Install
 
 ```
-/plugin marketplace add ahmadghoniem/clawd-furnace
-/plugin install clawd-furnace@clawd-furnace
+/plugin marketplace add ahmadghoniem/cache-fireplace
+/plugin install cache-fireplace@cache-fireplace
 ```

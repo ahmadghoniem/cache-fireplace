@@ -1,6 +1,6 @@
 {
-  "name": "clawd-furnace",
+  "name": "cache-fireplace",
   "owner": { "name": "Ahmed Ibrahim" },
   "description": "Clawd keeps a fireplace burning above the prompt while the prompt cache is warm.",
-  "plugins": [{ "name": "clawd-furnace", "source": "./" }]
+  "plugins": [{ "name": "cache-fireplace", "source": "./" }]
 }

@@ -5,10 +5,10 @@ import { COLUMNS, ROWS, ROW_COLUMNS, derive, frame, isColdStart, line, toBase64 
 import type { Inputs } from './scene'
 import type { Moment } from '../types'
 
-const lastRequestAt = atom({ plugin: 'clawd-furnace', key: 'lastRequestAt' } as const, null)
-const throwAt = atom({ plugin: 'clawd-furnace', key: 'throwAt' } as const, null)
-const pokeAt = atom({ plugin: 'clawd-furnace', key: 'pokeAt' } as const, null)
-const isHidden = atom({ plugin: 'clawd-furnace', key: 'isHidden' } as const, false)
+const lastRequestAt = atom({ plugin: 'cache-fireplace', key: 'lastRequestAt' } as const, null)
+const throwAt = atom({ plugin: 'cache-fireplace', key: 'throwAt' } as const, null)
+const pokeAt = atom({ plugin: 'cache-fireplace', key: 'pokeAt' } as const, null)
+const isHidden = atom({ plugin: 'cache-fireplace', key: 'isHidden' } as const, false)
 
 const KEY = 'fireplace'
 // 8 frames a second, as the mascot GIFs run
