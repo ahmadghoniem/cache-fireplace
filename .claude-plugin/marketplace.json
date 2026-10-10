@@ -1,0 +1,5 @@
+{
+  "name": "clawd-furnace",
+  "owner": { "name": "Ahmed Ibrahim" },
+  "plugins": [{ "name": "clawd-furnace", "source": "./" }]
+}
