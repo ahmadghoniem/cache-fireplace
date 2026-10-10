@@ -44,8 +44,8 @@ export const CLAWD = {
     '..cCCCCCCCCCCCC...',
     '..cCCECCCCCCCEC...',
     '..cCCECCCCCCCEC...',
-    'cCCCCCCCCCCCCCCC..',
-    'cCCCCCCCCCCCCCCC..',
+    'cCCCCCCCCCCCCCCCC.',
+    'cCCCCCCCCCCCCCCCC.',
     '..cCCCCCCCCCCCC...',
     '..cCCCCCCCCCCCC...',
     '..c.C.......C.C...',
@@ -80,8 +80,8 @@ export const CLAWD = {
     '..CCCCCCCCCCCCC...',
     '..CCCECCCCCCCEC...',
     '..CCCECCCCCCCEC...',
-    'CCCCCCCCCCCCCCCC..',
-    'CCCCCCCCCCCCCCCC..',
+    'CCCCCCCCCCCCCCCCC.',
+    'CCCCCCCCCCCCCCCCC.',
     '..CCCCCCCCCCCCC...',
     '..CCCCCCCCCCCCC...',
     '..C.C.......C.C...',
@@ -92,8 +92,8 @@ export const CLAWD = {
     '..cCCCCCCCCCCCC...',
     '..cCCECCCCCCCEC...',
     '..cCCECCCCCCCEC...',
-    'cCCCCCCCCCCCCCCC..',
-    'cCCCCCCCCCCCCCCC..',
+    'cCCCCCCCCCCCCCCCC.',
+    'cCCCCCCCCCCCCCCCC.',
     '..cCCCCCCCCCCCC...',
     '..cCCCCCCCCCCCC...',
     '...cC.......CC....',
@@ -138,10 +138,10 @@ export const CLAWD = {
 export type ClawdPose = keyof typeof CLAWD
 // The same pose with the eyes shut
 export const shut = (art: Art): Art => art.map(l => l.replaceAll('E', 'C'))
-// Facing away from the fireplace: mirrored, so the shade moves to the other side
+// Facing away from the fireplace: mirrored, the shade kept on the left, away from the fire's light
 export const turned = (art: Art): Art => {
   const w = artWidth(art)
-  return art.map(l => [...l.padEnd(w, '.')].reverse().join(''))
+  return art.map(l => [...l.padEnd(w, '.')].reverse().join('').replaceAll('c', 'C').replace('C', 'c'))
 }
 
 // Worn from 20 minutes left, over any idle pose: wrapped at the arm line, a tail hanging behind

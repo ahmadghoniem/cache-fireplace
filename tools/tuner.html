@@ -78,8 +78,8 @@
       "..cCCCCCCCCCCCC...",
       "..cCCECCCCCCCEC...",
       "..cCCECCCCCCCEC...",
-      "cCCCCCCCCCCCCCCC..",
-      "cCCCCCCCCCCCCCCC..",
+      "cCCCCCCCCCCCCCCCC.",
+      "cCCCCCCCCCCCCCCCC.",
       "..cCCCCCCCCCCCC...",
       "..cCCCCCCCCCCCC...",
       "..c.C.......C.C..."
@@ -111,8 +111,8 @@
       "..CCCCCCCCCCCCC...",
       "..CCCECCCCCCCEC...",
       "..CCCECCCCCCCEC...",
-      "CCCCCCCCCCCCCCCC..",
-      "CCCCCCCCCCCCCCCC..",
+      "CCCCCCCCCCCCCCCCC.",
+      "CCCCCCCCCCCCCCCCC.",
       "..CCCCCCCCCCCCC...",
       "..CCCCCCCCCCCCC...",
       "..C.C.......C.C..."
@@ -122,8 +122,8 @@
       "..cCCCCCCCCCCCC...",
       "..cCCECCCCCCCEC...",
       "..cCCECCCCCCCEC...",
-      "cCCCCCCCCCCCCCCC..",
-      "cCCCCCCCCCCCCCCC..",
+      "cCCCCCCCCCCCCCCCC.",
+      "cCCCCCCCCCCCCCCCC.",
       "..cCCCCCCCCCCCC...",
       "..cCCCCCCCCCCCC...",
       "...cC.......CC...."
@@ -165,7 +165,7 @@
   var shut = (art) => art.map((l) => l.replaceAll("E", "C"));
   var turned = (art) => {
     const w = artWidth(art);
-    return art.map((l) => [...l.padEnd(w, ".")].reverse().join(""));
+    return art.map((l) => [...l.padEnd(w, ".")].reverse().join("").replaceAll("c", "C").replace("C", "c"));
   };
   var SCARF = [
     "",
