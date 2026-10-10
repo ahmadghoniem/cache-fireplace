@@ -15,7 +15,8 @@ const shots: Shot[] = [
   { title: 'expired', ms: 2500, lastAgo: 70 * MIN },
 ]
 const out: { title: string; cols: number; rows: number; cells: number[] }[] = []
-const base = 1_790_000_000_000
+// A multiple of the rub (6 s) and look-out (17 s) cycles: each shot starts as he begins rubbing his hands
+const base = 1_790_000_040_000
 for (const s of shots) {
   for (let t = 0; t < s.ms; t += STEP) {
     const now = base + t

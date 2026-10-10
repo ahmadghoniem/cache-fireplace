@@ -62,15 +62,15 @@ export const CLAWD = {
     '..cCCCCCCCCCCCC...',
     '..c.C.......C.C...',
   ],
-  // Rubbing his hands: the far arm slides out past the near one and back
+  // Rubbing his hands: the far hand slides up over the near one as the near one drops a row
   rub: [
     '..cCCCCCCCCCCCC...',
     '..cCCCCCCCCCCCC...',
     '..cCCECCCCCCCEC...',
     '..cCCECCCCCCCEC...',
-    '..cCCCCCCCCCCCCCC.',
-    '..cCCCCCCCCCCCCCC.',
     '..cCCCCCCCCCCCCccc',
+    '..cCCCCCCCCCCCCCC.',
+    '..cCCCCCCCCCCCCCC.',
     '..cCCCCCCCCCCCC...',
     '..c.C.......C.C...',
   ],
