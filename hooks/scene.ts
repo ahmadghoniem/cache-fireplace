@@ -146,7 +146,6 @@ export function derive(inp: Inputs): State {
     s.isFlickerOff = p.remaining < LOW_MS && t < FLICKER_MS && Math.floor(t / 250) % 2 === 0
   }
   if (p.kind === 'expired') s.value = 'out'
-  if (p.kind === 'unlit') s.value = '–'
   return s
 }
 
@@ -169,6 +168,8 @@ const TONES: Record<Kind, number> = { unlit: TONE.dim, burning: TONE.clay, cold:
 
 // The row as runs of text and color: the bar and the time left
 export function row(s: State): [string, number][] {
+  // No bar before there is a fire: it shows, full, as the thrown log lands
+  if (s.kind === 'unlit' || (s.throwMs !== null && s.throwMs < T_IMPACT)) return []
   const tone = TONES[s.kind]
   let [body, rest] = loudMeter(s.fraction, ROW.bar)
   // The last charge blinks off: the track shows through
@@ -401,6 +402,7 @@ function drawPoke(t: number, sprite: Sprite, glyphs: Glyph[]) {
 // One row for a narrow terminal: the bar alone
 export function line(s: State): Drawn {
   const cells = new Uint32Array(ROW_COLUMNS * 3)
+  for (let i = 0; i < ROW_COLUMNS; i++) { cells[i * 3] = 0x20; cells[i * 3 + 1] = DEFAULT; cells[i * 3 + 2] = DEFAULT }
   let c = 0
   for (const [text, fg] of row(s)) {
     for (const ch of text) {

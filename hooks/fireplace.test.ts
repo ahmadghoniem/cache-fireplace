@@ -84,7 +84,8 @@ test('the full scene is drawn where it fits, one line where it does not, nothing
   expect(COLUMNS).toBeLessThanOrEqual(60)
   const [narrow] = await draw($, COLUMNS - 1)
   expect(narrow?.props).toMatchObject({ columns: ROW_COLUMNS, rows: 1 })
-  expect(textOf(narrow!.props!.cells as string)).toContain('–')
+  // Unlit: no bar yet
+  expect(textOf(narrow!.props!.cells as string).trim()).toBe('')
   expect(await draw($, ROW_COLUMNS - 1)).toHaveLength(0)
   expect(await draw($, 120, true)).toHaveLength(0)
 })
@@ -107,7 +108,7 @@ test('a request starts the hour; a subagent request does not', async ($, on) => 
   await step($, 'agent-1')
   const text = async () => textOf((await draw($, ROW_COLUMNS))[0]!.props!.cells as string)
   // Only the bar and the time: no state word, no label
-  expect(await text()).toBe('············    –')
+  expect((await text()).trim()).toBe('')
   await step($)
   await time.advance(13 * MIN)
   expect(await text()).toBe('▓▓▓▓▓▓▓▓▒···  47m')
