@@ -98,23 +98,36 @@ export const CLAWD = {
     '..cCCCCCCCCCCCC...',
     '...cC.......CC....',
   ],
-  // Reaching down to the woodpile: a pixel lower, eyes squeezed, knees out (Basketball frame 4)
+  // Reaching down for a log: squashed a row from the top, eyes squeezed, the near arm a row lower
+  // (Basketball frames 4 and 14)
   crouch: [
     '..................',
     '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
     '..cCCECCCCCCCEC...',
+    'cCCCCCCCCCCCCCC...',
+    'cCCCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCCCC.',
     '..cCCCCCCCCCCCC...',
-    'ccCCCCCCCCCCCCC...',
-    '..cCCCCCCCCCCCC...',
-    '..cCCCCCCCCCCCCCCC',
-    '..cCCCCCCCCCCCC...',
-    '.c..C.......C..C..',
+    '..c.C.......C.C...',
   ],
-  // The near arm up and out, throwing
+  // Holding the log against his side, the near arm behind it (Basketball frame 6)
+  lift: [
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCECCCCCCCEC...',
+    '..cCCECCCCCCCEC...',
+    'cCCCCCCCCCCCCCC...',
+    'cCCCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..cCCCCCCCCCCCC...',
+    '..c.C.......C.C...',
+  ],
+  // The near arm up over the log, throwing (Basketball frame 17)
   toss: [
     '..cCCCCCCCCCCCC...',
-    '..cCCCCCCCCCCCC.CC',
-    '..cCCECCCCCCCECC..',
+    '..cCCCCCCCCCCCC...',
+    '..cCCECCCCCCCECCC.',
     '..cCCECCCCCCCEC...',
     'cCCCCCCCCCCCCCC...',
     'cCCCCCCCCCCCCCC...',

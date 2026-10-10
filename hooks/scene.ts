@@ -358,20 +358,24 @@ function drawThrow(t: number, sprite: Sprite) {
   const { clawdY: y, fireX } = STAGE
   const x = 2
   if (t < T_WALK) return walk(t, 0, x, facing, sprite)
-  if (t < T_PICK) return sprite(CLAWD.crouch, x, y)
+  // The log on the floor under his hand, then against his side, then up under his arm
+  if (t < T_PICK) {
+    sprite(CLAWD.crouch, x, y)
+    return sprite(LOG, x + 15, y + 7)
+  }
   if (t < T_LIFT) {
-    sprite(CLAWD.stand, x, y)
-    return sprite(LOG, x + 15, y + 3)
+    sprite(CLAWD.lift, x, y)
+    return sprite(LOG, x + 15, y + 4)
   }
   if (t < T_RELEASE) {
     sprite(CLAWD.toss, x, y)
-    return sprite(LOG, x + 16, y)
+    return sprite(LOG, x + 15, y + 3)
   }
   if (t < T_IMPACT) {
     // The log goes forward and drops into the fire
     const k = (t - T_RELEASE) / (T_IMPACT - T_RELEASE)
-    sprite(CLAWD.toss, x, y)
-    return sprite(LOG, lerp(x + 16, fireX + BED.x + 2, k), lerp(y + 1, BED_Y - 1, k))
+    sprite(CLAWD.stand, x, y)
+    return sprite(LOG, lerp(x + 15, fireX + BED.x + 2, k), lerp(y + 3, BED_Y - 1, k))
   }
   // He watches it catch, eyes shut, then turns and walks back
   if (t < T_TURN) return sprite(shut(CLAWD.stand), x, y)
