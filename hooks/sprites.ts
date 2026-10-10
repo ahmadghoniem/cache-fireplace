@@ -23,11 +23,11 @@ export const PAL: Record<string, number> = {
   y: 0xfde047, // flame tip, spark
   s: 0x9aa3ad, // smoke
   G: 0x6b7280, // floor
-  Z: 0x40444d, // floor in the side wall's shadow
+  Z: 0x212732, // floor in the side wall's shadow
   T: 0xb9c2cc, // stone, top face
   S: 0x39434f, // stone, top of the side wall
-  V: 0x303944, // stone, side wall
-  M: 0x2d3744, // stone, side of the mantel
+  V: 0x1d252f, // stone, side wall
+  M: 0x2e3744, // stone, side of the mantel
   w: 0x5a2a1c, // inner left wall of the opening
 }
 
@@ -151,10 +151,10 @@ export const CLAWD = {
 export type ClawdPose = keyof typeof CLAWD
 // The same pose with the eyes shut
 export const shut = (art: Art): Art => art.map(l => l.replaceAll('E', 'C'))
-// Facing away from the fireplace: mirrored, the shade kept on the left, away from the fire's light
+// Facing away from the fireplace: mirrored, the shade with it on the side he turns away from
 export const turned = (art: Art): Art => {
   const w = artWidth(art)
-  return art.map(l => [...l.padEnd(w, '.')].reverse().join('').replaceAll('c', 'C').replace('C', 'c'))
+  return art.map(l => [...l.padEnd(w, '.')].reverse().join(''))
 }
 
 // Worn from 20 minutes left, over any idle pose: wrapped at the arm line, a tail hanging behind

@@ -64,11 +64,11 @@
     y: 16638023,
     s: 10134445,
     G: 7041664,
-    Z: 4211789,
+    Z: 2172722,
     T: 12174028,
     S: 3752783,
-    V: 3160388,
-    M: 2963268,
+    V: 1910063,
+    M: 3028804,
     w: 5909020
   };
   var artWidth = (art) => Math.max(0, ...art.map((l) => l.length));
@@ -176,7 +176,7 @@
   var shut = (art) => art.map((l) => l.replaceAll("E", "C"));
   var turned = (art) => {
     const w = artWidth(art);
-    return art.map((l) => [...l.padEnd(w, ".")].reverse().join("").replaceAll("c", "C").replace("C", "c"));
+    return art.map((l) => [...l.padEnd(w, ".")].reverse().join(""));
   };
   var SCARF = [
     "",
