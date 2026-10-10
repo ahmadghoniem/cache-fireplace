@@ -1,6 +1,6 @@
 // The fireplace scene, drawn into Raster cells. Pure, and a function of the clock alone:
 // the same inputs draw the same frame, so the tuner and tools/preview show any moment.
-import { BED, CLAWD, FIREPLACE, LOG, LOGS_ROW, PAL, PUFFS, SCARF, SIDE_W, TIPS, artWidth, shut, turned } from './sprites'
+import { CLAWD, FIREPLACE, LOG, LOG_PIXELS, MORTAR, OPENING_TOP, PAL, PILE, SCARF, SIDE_W, TIPS, artWidth, shut, turned } from './sprites'
 import type { Art } from './sprites'
 
 const MIN = 60_000
@@ -222,7 +222,8 @@ export function frame(s: State, now: number): Drawn {
 
   // The floor, in the side wall's shadow at the far end
   for (let x = 0; x < w; x++) put(x, h - 1, x >= w - SIDE_W ? PAL.Z! : PAL.G!)
-  drawFireplace(s, tick, sprite, put)
+  const get = (x: number, y: number) => px[y * w + x]!
+  drawFireplace(s, tick, sprite, put, get, glyphs)
   drawClawd(s, now, sprite, glyphs)
 
   // Text left of the stage on the bottom row, half-blocks after it
@@ -260,71 +261,82 @@ export function frame(s: State, now: number): Drawn {
 
 type Sprite = (art: Art, x: number, y: number, color?: (ch: string) => number | undefined) => void
 type Put = (x: number, y: number, c: number) => void
-// The fireplace's rows on the stage
-const BED_Y = STAGE.fireY + BED.y
-const LOGS_Y = STAGE.fireY + LOGS_ROW
+// The pile and the opening on the stage
+const PILE_X = STAGE.fireX + PILE.x
+const PILE_Y = STAGE.fireY + PILE.y
+const TOP_Y = STAGE.fireY + OPENING_TOP
+const isLog = (i: number, j: number) => LOG_PIXELS.has(FIREPLACE[PILE.y + j]?.[PILE.x + i] ?? '')
+// What the fire's glow tints, toward which color and how far
+const GLOW: Record<string, [number, number]> = { k: [0x8a3a22, 1], D: [0x4a1e10, 0.6], w: [0x8b3a2a, 1], n: [0xa8582e, 0.9], u: [0x3a1a10, 0.5] }
 
-// The fireplace tells the state: flames by height, then embers, then ash and smoke
-function drawFireplace(s: State, tick: number, sprite: Sprite, put: Put) {
+// The fireplace tells the state: flames by height, embers on the logs, then ash and smoke
+function drawFireplace(s: State, tick: number, sprite: Sprite, put: Put, get: (x: number, y: number) => number, glyphs: Glyph[]) {
   const fx = STAGE.fireX
   const isLit = s.fire > 0
-  // The firebrick and the inner wall take the fire's glow
+  // The inside of the opening takes the fire's glow
   const glow = isLit ? 0.25 + 0.45 * s.fire : s.kind === 'cold' ? 0.18 * (1 - s.cold) : 0
   sprite(FIREPLACE, fx, STAGE.fireY, ch => {
-    if (ch === 'k') return mix(PAL.k!, 0x8a3a22, glow)
-    if (ch === 'D') return mix(PAL.D!, 0x4a1e10, glow * 0.6)
-    if (ch === 'w') return mix(PAL.w!, 0x8b3a2a, glow)
-    return PAL[ch]
+    const to = GLOW[ch]
+    return to ? mix(PAL[ch]!, to[0], glow * to[1]) : PAL[ch]
   })
+  for (const m of MORTAR) glyphs.push({ x: fx + m.x, row: STAGE.fireY / 2 + m.row, ch: m.ch, fg: PAL[m.color]! })
 
-  const x0 = fx + BED.x
   if (isLit) {
-    // Two rows as the cooking scene has them, three while the fire is high
-    const rows = s.fire >= 0.75 ? 3 : 2
+    // Flames behind the pile, up to the underside; a row higher while the fire is high
+    const base = PILE_Y + 1
+    const rows = base - TOP_Y + (s.fire >= 0.75 ? 1 : 0)
     for (let r = 0; r < rows; r++) {
-      const y = BED_Y - r
-      // Each row up is narrower; the top row is the cooking scene's tips
-      const inset = r === 0 ? 0 : Math.min(3, r + 1)
-      for (let i = inset; i < BED.w - inset; i++) {
+      const y = base - r
+      // Each row up from the third is narrower; the top row is the cooking scene's tips
+      const inset = r < 2 ? 0 : r - 1
+      for (let i = inset; i < PILE.w - inset; i++) {
         let ch: string
         if (r === 0) ch = (i + tick) % 2 === 0 ? 'F' : 'f'
         else if (r === rows - 1) ch = TIPS[(tick + r * 5) % TIPS.length]![i]!
-        else ch = hash(tick, r * 16 + i) < 0.7 ? ((i + tick + r) % 2 === 0 ? 'F' : 'y') : '.'
-        if (ch !== '.') put(x0 + i, y, PAL[ch]!)
+        else ch = hash(tick, r * 16 + i) < 0.75 ? ((i + tick + r) % 2 === 0 ? 'F' : 'y') : '.'
+        if (ch !== '.' && !isLog(i, y - PILE_Y)) put(PILE_X + i, y, PAL[ch]!)
       }
     }
     // Sparks up the flue from a fresh log or a poke
     if (s.fire > 0.9 || s.isStoked) {
-      for (let k = 0; k < 3; k++) {
-        const y = BED_Y - rows - Math.floor(hash(tick, 300 + k) * 2)
-        if (y >= STAGE.fireY + 3 && hash(tick, 100 + k) < 0.6) put(x0 + 1 + Math.floor(hash(tick, 200 + k) * (BED.w - 2)), y, PAL.y!)
+      for (let k = 0; k < 2; k++) {
+        if (hash(tick, 100 + k) < 0.6) put(PILE_X + 1 + Math.floor(hash(tick, 200 + k) * (PILE.w - 2)), TOP_Y + Math.floor(hash(tick, 300 + k) * 2), PAL.y!)
       }
     }
-    return
   }
-  if (s.kind === 'cold') {
-    // Embers on the logs, fewer as the cold stretch runs out, and a thread of smoke
-    for (let i = 0; i < BED.w; i++) {
-      if (hash(i, 7) < 0.75 - 0.6 * s.cold) put(x0 + i, LOGS_Y, PAL[(i + tick) % 3 === 0 ? 'F' : 'f']!)
+  // Embers on the bark, flame and red in turn: fewer on fresh logs, more as they burn down and cool
+  const embers = s.kind === 'burning' ? 0.3 + 0.3 * (1 - s.fire) : s.kind === 'cold' ? 0.6 - 0.5 * s.cold : 0
+  for (let j = 0; j < PILE.h; j++) {
+    for (let i = 0; i < PILE.w; i++) {
+      if (!isLog(i, j)) continue
+      const isEnd = FIREPLACE[PILE.y + j]![PILE.x + i] === 'W'
+      if (!isEnd && hash(i * 7 + j, 7) < embers) put(PILE_X + i, PILE_Y + j, PAL[(i + j + tick) % 3 === 0 ? 'F' : 'f']!)
+      if (s.kind === 'expired') put(PILE_X + i, PILE_Y + j, !isEnd && (i + j) % 4 === 3 ? 0x3e3a37 : PAL.a!)
     }
-    smoke(x0 + 3, 0.5, tick, sprite)
-    return
   }
-  if (s.kind === 'expired') {
-    for (let i = 0; i < BED.w; i++) if (i % 5 !== 4) put(x0 + i, LOGS_Y, PAL.a!)
-    smoke(x0 + 2, 1, tick, sprite)
-  }
+  if (!isLit && (s.kind === 'cold' || s.kind === 'expired')) smoke(s.kind === 'cold' ? 2 : 3, s.kind === 'cold' ? 0.65 : 1, tick, put, get)
 }
 
-// A puff rising from the logs into the flue, every 16 ticks
-function smoke(x: number, strength: number, tick: number, sprite: Sprite) {
-  const t = tick % 16
-  if (t >= 8) return
-  const y = LOGS_Y - 1 - Math.floor(t / 2)
-  if (y < STAGE.fireY + 3) return
-  const puff = PUFFS[Math.min(PUFFS.length - 1, Math.floor(t / 3))]!
-  const color = mix(PAL.D!, PAL.s!, strength * (1 - t / 12))
-  sprite(puff, x + (t >> 2), y - puff.length + 1, ch => (ch === 's' ? color : undefined))
+// Smoke: thin see-through wisps, one pixel and a fainter tail, rising from the top of the pile with
+// a sway and fading out at the underside. They stay inside the opening
+function smoke(n: number, strength: number, tick: number, put: Put, get: (x: number, y: number) => number) {
+  for (let k = 0; k < n; k++) {
+    const i = [3, 2, 4][k]!, dir = k === 1 ? -1 : 1
+    // The row above the log under the wisp
+    let j = 0
+    while (j < PILE.h && !isLog(i, j)) j++
+    const y0 = PILE_Y + j - 1
+    const life = (y0 - TOP_Y + 1) * 2, t = (tick + k * 5) % (life + 3)
+    if (t >= life) continue
+    const r = t >> 1, a = strength * (0.6 - 0.35 * t / life)
+    const at = (r: number): [number, number] => [PILE_X + i + (r % 4 === 1 || r % 4 === 2 ? dir : 0), y0 - r]
+    if (r > 0) {
+      const [x, y] = at(r - 1)
+      put(x, y, mix(get(x, y), PAL.s!, a * 0.45))
+    }
+    const [x, y] = at(r)
+    put(x, y, mix(get(x, y), PAL.s!, a))
+  }
 }
 
 function drawClawd(s: State, now: number, sprite: Sprite, glyphs: Glyph[]) {
@@ -355,7 +367,7 @@ function walk(t: number, from: number, to: number, face: (a: Art) => Art, sprite
 const facing = (a: Art) => a
 
 function drawThrow(t: number, sprite: Sprite) {
-  const { clawdY: y, fireX } = STAGE
+  const { clawdY: y } = STAGE
   const x = 2
   if (t < T_WALK) return walk(t, 0, x, facing, sprite)
   // The log on the floor under his hand, then against his side, then up under his arm
@@ -375,7 +387,7 @@ function drawThrow(t: number, sprite: Sprite) {
     // The log goes forward and drops into the fire
     const k = (t - T_RELEASE) / (T_IMPACT - T_RELEASE)
     sprite(CLAWD.stand, x, y)
-    return sprite(LOG, lerp(x + 15, fireX + BED.x + 2, k), lerp(y + 3, BED_Y - 1, k))
+    return sprite(LOG, lerp(x + 15, PILE_X + 2, k), lerp(y + 3, PILE_Y - 2, k))
   }
   // He watches it catch, eyes shut, then turns and walks back
   if (t < T_TURN) return sprite(shut(CLAWD.stand), x, y)
@@ -386,7 +398,7 @@ function drawThrow(t: number, sprite: Sprite) {
 }
 
 function drawPoke(t: number, sprite: Sprite, glyphs: Glyph[]) {
-  const { clawdY: y, fireX } = STAGE
+  const { clawdY: y } = STAGE
   const x = 1
   if (t < P_REACH) return walk(t, 0, x, facing, sprite)
   if (t >= P_DONE) {
@@ -397,7 +409,7 @@ function drawPoke(t: number, sprite: Sprite, glyphs: Glyph[]) {
   // The poker, a wooden stick thinner than his arm: a straight ─ from his hand into the opening;
   // a jab pushes it a column in and lights its tip
   const isIn = P_JABS.some(j => t >= j && t < j + P_JAB_MS)
-  const tipX = fireX + BED.x + 2 + (isIn ? 1 : 0)
+  const tipX = PILE_X + 2 + (isIn ? 1 : 0)
   const row = (y + 4) / 2
   for (let gx = x + artWidth(CLAWD.poke); gx < tipX; gx++) glyphs.push({ x: gx, row, ch: '─', fg: PAL.L! })
   glyphs.push({ x: tipX, row, ch: '─', fg: isIn ? PAL.F! : PAL.L! })

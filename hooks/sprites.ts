@@ -11,23 +11,32 @@ export const PAL: Record<string, number> = {
   b: 0x2f5d96, // scarf, shade
   R: 0x94a0b0, // stone, lit edge: mantel and hearth
   P: 0x5f6b7a, // stone
+  Q: 0x697686, // stone block, lighter
+  O: 0x56606e, // stone block, darker
+  X: 0x727e8d, // mortar, a light grout
   H: 0x465160, // stone, shade
   D: 0x1c1310, // inside the fireplace
   k: 0x33190f, // firebrick
+  u: 0x120c0a, // underside of the mantel, inside the opening
+  n: 0x74402a, // inner floor of the opening
   L: 0x8b5a2b, // bark
   l: 0x5e3a1a, // bark, shade
+  '!': 0x7b4f26, // bark, a ring before the cut end
   W: 0xbe8e5c, // cut end of a log
   a: 0x5b5550, // ash
   F: 0xf59e0b, // flame
   f: 0xef4444, // flame, red
   y: 0xfde047, // flame tip, spark
-  s: 0x9aa3ad, // smoke
+  s: 0xa7afb8, // smoke, mixed over what is behind it
   G: 0x6b7280, // floor
   Z: 0x212732, // floor in the side wall's shadow
   T: 0xb9c2cc, // stone, top face
   S: 0x39434f, // stone, top of the side wall
   V: 0x1d252f, // stone, side wall
   M: 0x2e3744, // stone, side of the mantel
+  q: 0x202934, // stone block, lighter, on the side wall
+  o: 0x1a212b, // stone block, darker, on the side wall
+  x: 0x232c37, // mortar on the side wall
   w: 0x5a2a1c, // inner left wall of the opening
 }
 
@@ -173,33 +182,45 @@ export const SCARF: Art = [
 export const LOG: Art = ['LLW', 'llW']
 
 // A stone fireplace turned to face Clawd (16 x 9): a pale top T, the mantel's front R, the front
-// stone P, and on the right the side wall seen edge-on (S over V, M beside the mantel). The opening
-// has a frame H on its left only; its inner left wall w shows, firebrick behind, logs on its floor.
+// stone P with some blocks lighter (Q) or darker (O), and on the right the side wall seen edge-on
+// (S over V, M beside the mantel, q and o its blocks). The opening sits right under the mantel,
+// rows 2-7: the underside u on top, a frame H on its left, its inner left wall w stepped at both
+// ends, firebrick behind and the inner floor n. On the floor a pile of logs 5, 3 and 1 long, each
+// with a shaded back end l, a ring ! and a pale cut end W.
 // It stands on the floor, which is in its shadow (Z) under the side wall.
 export const FIREPLACE: Art = [
   'TTTTTTTTTTTTTTSS',
   'RRRRRRRRRRRRRRMM',
-  'PPPPPPPPPPPPPPVV',
-  'PPHwwDkkDkkDPPVV',
-  'PPHwwkDkkDkkPPVV',
-  'PPHwwDkkDkkDPPVV',
-  'PPHwwkkDkkDkPPVV',
-  'PPHwLLWlLLLWPPVV',
+  'OQHwuuuuuuuuPQqq',
+  'OQHwwDkkDkkDPQqq',
+  'PPHwwkDWkDkkPPoV',
+  'PPHwwDlLWkkDPPoV',
+  'PPHwwlLL!WDkPPqq',
+  'PPHwnnnnnnnnPPqq',
   'PPPPPPPPPPPPPPVV',
 ]
-// Where the fire sits in FIREPLACE: 8 wide over the logs, its base on row 6
-export const BED = { x: 4, y: 6, w: 8 }
-// The logs' row, which glows as embers and turns to ash
-export const LOGS_ROW = 7
+// The log pile in FIREPLACE; the fire burns 7 wide behind it
+export const PILE = { x: 4, y: 4, w: 7, h: 3 }
+// The underside's row: the top of the opening
+export const OPENING_TOP = 2
+export const LOG_PIXELS = new Set(['L', 'l', 'W', '!'])
+// Mortar between the stone blocks: a line glyph in a terminal cell of FIREPLACE, over the cell's
+// one color. Light grout X on the front, x on the side wall
+export const MORTAR: { x: number; row: number; ch: string; color: string }[] = [
+  { x: 0, row: 1, ch: '▁', color: 'X' }, { x: 1, row: 1, ch: '▏', color: 'X' }, { x: 0, row: 2, ch: '▁', color: 'X' },
+  { x: 1, row: 2, ch: '▔', color: 'X' }, { x: 1, row: 3, ch: '▔', color: 'X' },
+  { x: 13, row: 1, ch: '▏', color: 'X' }, { x: 12, row: 2, ch: '▔', color: 'X' }, { x: 13, row: 2, ch: '▔', color: 'X' },
+  { x: 12, row: 3, ch: '▁', color: 'X' }, { x: 13, row: 3, ch: '▁', color: 'X' },
+  { x: 14, row: 1, ch: '▁', color: 'x' }, { x: 15, row: 1, ch: '▁', color: 'x' }, { x: 14, row: 2, ch: '▕', color: 'x' },
+  { x: 15, row: 2, ch: '▁', color: 'x' }, { x: 14, row: 3, ch: '▔', color: 'x' },
+]
 // The side wall's columns: the floor under them is in shadow
 export const SIDE_W = 2
 
-// The flame tips of the cooking scene, one per frame; under them a checker of F and f
+// The flame tips of the cooking scene, one per frame, cut to the fire's 7; under them a checker of F and f
 export const TIPS = [
   '..F.y..y', 'y..y.F..', '.F..F.F.', 'F.F..F.y',
   '.F.y..y.', '..y.F..F', 'F..F.F..', '.F..F.y.',
   'F.y..y.F', '.y.F..F.', '..F.F..F', 'F..F.y..',
   '.y..y.F.', 'y.F..F.F', '.F.F..F.', 'y..y.F..',
-]
-// Smoke, from the cooking scene's puffs, smallest last
-export const PUFFS: Art[] = [['.s.', 'sss'], ['ss'], ['s']]
+].map(t => t.slice(0, 7))

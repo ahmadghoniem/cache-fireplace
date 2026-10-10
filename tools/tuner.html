@@ -52,23 +52,32 @@
     b: 3104150,
     R: 9740464,
     P: 6253434,
+    Q: 6911622,
+    O: 5660782,
+    X: 7503501,
     H: 4608352,
     D: 1839888,
     k: 3348751,
+    u: 1182730,
+    n: 7618602,
     L: 9132587,
     l: 6175258,
+    "!": 8081190,
     W: 12488284,
     a: 5985616,
     F: 16096779,
     f: 15680580,
     y: 16638023,
-    s: 10134445,
+    s: 10989496,
     G: 7041664,
     Z: 2172722,
     T: 12174028,
     S: 3752783,
     V: 1910063,
     M: 3028804,
+    q: 2107700,
+    o: 1712427,
+    x: 2305079,
     w: 5909020
   };
   var artWidth = (art) => Math.max(0, ...art.map((l) => l.length));
@@ -192,16 +201,34 @@
   var FIREPLACE = [
     "TTTTTTTTTTTTTTSS",
     "RRRRRRRRRRRRRRMM",
-    "PPPPPPPPPPPPPPVV",
-    "PPHwwDkkDkkDPPVV",
-    "PPHwwkDkkDkkPPVV",
-    "PPHwwDkkDkkDPPVV",
-    "PPHwwkkDkkDkPPVV",
-    "PPHwLLWlLLLWPPVV",
+    "OQHwuuuuuuuuPQqq",
+    "OQHwwDkkDkkDPQqq",
+    "PPHwwkDWkDkkPPoV",
+    "PPHwwDlLWkkDPPoV",
+    "PPHwwlLL!WDkPPqq",
+    "PPHwnnnnnnnnPPqq",
     "PPPPPPPPPPPPPPVV"
   ];
-  var BED = { x: 4, y: 6, w: 8 };
-  var LOGS_ROW = 7;
+  var PILE = { x: 4, y: 4, w: 7, h: 3 };
+  var OPENING_TOP = 2;
+  var LOG_PIXELS = new Set(["L", "l", "W", "!"]);
+  var MORTAR = [
+    { x: 0, row: 1, ch: "▁", color: "X" },
+    { x: 1, row: 1, ch: "▏", color: "X" },
+    { x: 0, row: 2, ch: "▁", color: "X" },
+    { x: 1, row: 2, ch: "▔", color: "X" },
+    { x: 1, row: 3, ch: "▔", color: "X" },
+    { x: 13, row: 1, ch: "▏", color: "X" },
+    { x: 12, row: 2, ch: "▔", color: "X" },
+    { x: 13, row: 2, ch: "▔", color: "X" },
+    { x: 12, row: 3, ch: "▁", color: "X" },
+    { x: 13, row: 3, ch: "▁", color: "X" },
+    { x: 14, row: 1, ch: "▁", color: "x" },
+    { x: 15, row: 1, ch: "▁", color: "x" },
+    { x: 14, row: 2, ch: "▕", color: "x" },
+    { x: 15, row: 2, ch: "▁", color: "x" },
+    { x: 14, row: 3, ch: "▔", color: "x" }
+  ];
   var SIDE_W = 2;
   var TIPS = [
     "..F.y..y",
@@ -220,8 +247,7 @@
     "y.F..F.F",
     ".F.F..F.",
     "y..y.F.."
-  ];
-  var PUFFS = [[".s.", "sss"], ["ss"], ["s"]];
+  ].map((t) => t.slice(0, 7));
 
   // hooks/scene.ts
   var MIN = 60000;
@@ -375,7 +401,8 @@
     const glyphs = [];
     for (let x = 0;x < w; x++)
       put(x, h - 1, x >= w - SIDE_W ? PAL.Z : PAL.G);
-    drawFireplace(s, tick, sprite, put);
+    const get = (x, y) => px[y * w + x];
+    drawFireplace(s, tick, sprite, put, get, glyphs);
     drawClawd(s, now, sprite, glyphs);
     const cells = new Uint32Array(COLUMNS * ROWS * 3).fill(0);
     for (let i = 0;i < COLUMNS * ROWS; i++) {
@@ -424,73 +451,80 @@
     }
     return { cells, columns: COLUMNS, rows: ROWS };
   }
-  var BED_Y = STAGE.fireY + BED.y;
-  var LOGS_Y = STAGE.fireY + LOGS_ROW;
-  function drawFireplace(s, tick, sprite, put) {
+  var PILE_X = STAGE.fireX + PILE.x;
+  var PILE_Y = STAGE.fireY + PILE.y;
+  var TOP_Y = STAGE.fireY + OPENING_TOP;
+  var isLog = (i, j) => LOG_PIXELS.has(FIREPLACE[PILE.y + j]?.[PILE.x + i] ?? "");
+  var GLOW = { k: [9058850, 1], D: [4857360, 0.6], w: [9124394, 1], n: [11032622, 0.9], u: [3807760, 0.5] };
+  function drawFireplace(s, tick, sprite, put, get, glyphs) {
     const fx = STAGE.fireX;
     const isLit = s.fire > 0;
     const glow = isLit ? 0.25 + 0.45 * s.fire : s.kind === "cold" ? 0.18 * (1 - s.cold) : 0;
     sprite(FIREPLACE, fx, STAGE.fireY, (ch) => {
-      if (ch === "k")
-        return mix(PAL.k, 9058850, glow);
-      if (ch === "D")
-        return mix(PAL.D, 4857360, glow * 0.6);
-      if (ch === "w")
-        return mix(PAL.w, 9124394, glow);
-      return PAL[ch];
+      const to = GLOW[ch];
+      return to ? mix(PAL[ch], to[0], glow * to[1]) : PAL[ch];
     });
-    const x0 = fx + BED.x;
+    for (const m of MORTAR)
+      glyphs.push({ x: fx + m.x, row: STAGE.fireY / 2 + m.row, ch: m.ch, fg: PAL[m.color] });
     if (isLit) {
-      const rows = s.fire >= 0.75 ? 3 : 2;
+      const base = PILE_Y + 1;
+      const rows = base - TOP_Y + (s.fire >= 0.75 ? 1 : 0);
       for (let r = 0;r < rows; r++) {
-        const y = BED_Y - r;
-        const inset = r === 0 ? 0 : Math.min(3, r + 1);
-        for (let i = inset;i < BED.w - inset; i++) {
+        const y = base - r;
+        const inset = r < 2 ? 0 : r - 1;
+        for (let i = inset;i < PILE.w - inset; i++) {
           let ch;
           if (r === 0)
             ch = (i + tick) % 2 === 0 ? "F" : "f";
           else if (r === rows - 1)
             ch = TIPS[(tick + r * 5) % TIPS.length][i];
           else
-            ch = hash(tick, r * 16 + i) < 0.7 ? (i + tick + r) % 2 === 0 ? "F" : "y" : ".";
-          if (ch !== ".")
-            put(x0 + i, y, PAL[ch]);
+            ch = hash(tick, r * 16 + i) < 0.75 ? (i + tick + r) % 2 === 0 ? "F" : "y" : ".";
+          if (ch !== "." && !isLog(i, y - PILE_Y))
+            put(PILE_X + i, y, PAL[ch]);
         }
       }
       if (s.fire > 0.9 || s.isStoked) {
-        for (let k = 0;k < 3; k++) {
-          const y = BED_Y - rows - Math.floor(hash(tick, 300 + k) * 2);
-          if (y >= STAGE.fireY + 3 && hash(tick, 100 + k) < 0.6)
-            put(x0 + 1 + Math.floor(hash(tick, 200 + k) * (BED.w - 2)), y, PAL.y);
+        for (let k = 0;k < 2; k++) {
+          if (hash(tick, 100 + k) < 0.6)
+            put(PILE_X + 1 + Math.floor(hash(tick, 200 + k) * (PILE.w - 2)), TOP_Y + Math.floor(hash(tick, 300 + k) * 2), PAL.y);
         }
       }
-      return;
     }
-    if (s.kind === "cold") {
-      for (let i = 0;i < BED.w; i++) {
-        if (hash(i, 7) < 0.75 - 0.6 * s.cold)
-          put(x0 + i, LOGS_Y, PAL[(i + tick) % 3 === 0 ? "F" : "f"]);
+    const embers = s.kind === "burning" ? 0.3 + 0.3 * (1 - s.fire) : s.kind === "cold" ? 0.6 - 0.5 * s.cold : 0;
+    for (let j = 0;j < PILE.h; j++) {
+      for (let i = 0;i < PILE.w; i++) {
+        if (!isLog(i, j))
+          continue;
+        const isEnd = FIREPLACE[PILE.y + j][PILE.x + i] === "W";
+        if (!isEnd && hash(i * 7 + j, 7) < embers)
+          put(PILE_X + i, PILE_Y + j, PAL[(i + j + tick) % 3 === 0 ? "F" : "f"]);
+        if (s.kind === "expired")
+          put(PILE_X + i, PILE_Y + j, !isEnd && (i + j) % 4 === 3 ? 4078135 : PAL.a);
       }
-      smoke(x0 + 3, 0.5, tick, sprite);
-      return;
     }
-    if (s.kind === "expired") {
-      for (let i = 0;i < BED.w; i++)
-        if (i % 5 !== 4)
-          put(x0 + i, LOGS_Y, PAL.a);
-      smoke(x0 + 2, 1, tick, sprite);
-    }
+    if (!isLit && (s.kind === "cold" || s.kind === "expired"))
+      smoke(s.kind === "cold" ? 2 : 3, s.kind === "cold" ? 0.65 : 1, tick, put, get);
   }
-  function smoke(x, strength, tick, sprite) {
-    const t = tick % 16;
-    if (t >= 8)
-      return;
-    const y = LOGS_Y - 1 - Math.floor(t / 2);
-    if (y < STAGE.fireY + 3)
-      return;
-    const puff = PUFFS[Math.min(PUFFS.length - 1, Math.floor(t / 3))];
-    const color = mix(PAL.D, PAL.s, strength * (1 - t / 12));
-    sprite(puff, x + (t >> 2), y - puff.length + 1, (ch) => ch === "s" ? color : undefined);
+  function smoke(n, strength, tick, put, get) {
+    for (let k = 0;k < n; k++) {
+      const i = [3, 2, 4][k], dir = k === 1 ? -1 : 1;
+      let j = 0;
+      while (j < PILE.h && !isLog(i, j))
+        j++;
+      const y0 = PILE_Y + j - 1;
+      const life = (y0 - TOP_Y + 1) * 2, t = (tick + k * 5) % (life + 3);
+      if (t >= life)
+        continue;
+      const r = t >> 1, a = strength * (0.6 - 0.35 * t / life);
+      const at = (r) => [PILE_X + i + (r % 4 === 1 || r % 4 === 2 ? dir : 0), y0 - r];
+      if (r > 0) {
+        const [x, y] = at(r - 1);
+        put(x, y, mix(get(x, y), PAL.s, a * 0.45));
+      }
+      const [x, y] = at(r);
+      put(x, y, mix(get(x, y), PAL.s, a));
+    }
   }
   function drawClawd(s, now, sprite, glyphs) {
     const { clawdX: x, clawdY: y } = STAGE;
@@ -522,7 +556,7 @@
   }
   var facing = (a) => a;
   function drawThrow(t, sprite) {
-    const { clawdY: y, fireX } = STAGE;
+    const { clawdY: y } = STAGE;
     const x = 2;
     if (t < T_WALK)
       return walk(t, 0, x, facing, sprite);
@@ -541,7 +575,7 @@
     if (t < T_IMPACT) {
       const k = (t - T_RELEASE) / (T_IMPACT - T_RELEASE);
       sprite(CLAWD.stand, x, y);
-      return sprite(LOG, lerp(x + 15, fireX + BED.x + 2, k), lerp(y + 3, BED_Y - 1, k));
+      return sprite(LOG, lerp(x + 15, PILE_X + 2, k), lerp(y + 3, PILE_Y - 2, k));
     }
     if (t < T_TURN)
       return sprite(shut(CLAWD.stand), x, y);
@@ -554,7 +588,7 @@
     sprite(CLAWD.stand, 0, y);
   }
   function drawPoke(t, sprite, glyphs) {
-    const { clawdY: y, fireX } = STAGE;
+    const { clawdY: y } = STAGE;
     const x = 1;
     if (t < P_REACH)
       return walk(t, 0, x, facing, sprite);
@@ -564,7 +598,7 @@
     }
     sprite(CLAWD.poke, x, y);
     const isIn = P_JABS.some((j) => t >= j && t < j + P_JAB_MS);
-    const tipX = fireX + BED.x + 2 + (isIn ? 1 : 0);
+    const tipX = PILE_X + 2 + (isIn ? 1 : 0);
     const row = (y + 4) / 2;
     for (let gx = x + artWidth(CLAWD.poke);gx < tipX; gx++)
       glyphs.push({ x: gx, row, ch: "─", fg: PAL.L });
