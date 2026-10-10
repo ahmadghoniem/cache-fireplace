@@ -1,6 +1,6 @@
 // The fireplace scene, drawn into Raster cells. Pure, and a function of the clock alone:
 // the same inputs draw the same frame, so the tuner and tools/preview show any moment.
-import { BED, CLAWD, FIREPLACE, HEARTH_ROW, LOG, LOGS_ROW, PAL, PUFFS, SCARF, TIPS, WOODPILE, artWidth, shut, turned } from './sprites'
+import { BED, CLAWD, FIREPLACE, LOG, LOGS_ROW, PAL, PUFFS, SCARF, SIDE_W, TIPS, artWidth, shut, turned } from './sprites'
 import type { Art } from './sprites'
 
 const MIN = 60_000
@@ -186,13 +186,12 @@ export function row(s: State): [string, number][] {
 // --- The scene ---------------------------------------------------------------------------
 
 // Where everything sits, in pixels; two pixel rows to a terminal row.
-// Clawd stands on the floor on the last pixel row; the fireplace's hearth is that row
+// Clawd and the fireplace both stand on the floor on the last pixel row, 3 pixels apart
 export const STAGE = (() => {
   const h = CLAWD.stand.length + 1
-  const pileX = artWidth(CLAWD.stand) + 1
-  const fireX = pileX + artWidth(WOODPILE)
+  const fireX = artWidth(CLAWD.stand) + 3
   const w = fireX + artWidth(FIREPLACE)
-  return { w, h, clawdX: 0, clawdY: 0, pileX, pileY: h - 1 - WOODPILE.length, fireX, fireY: h - FIREPLACE.length }
+  return { w, h, clawdX: 0, clawdY: 0, fireX, fireY: h - 1 - FIREPLACE.length }
 })()
 const GAP = 2
 export const COLUMNS = ROW_COLUMNS + GAP + STAGE.w
@@ -220,9 +219,8 @@ export function frame(s: State, now: number): Drawn {
   const tick = Math.floor(now / FLAME_MS)
   const glyphs: Glyph[] = []
 
-  // The floor Clawd and the woodpile stand on, up to the hearth
-  for (let x = 0; x < STAGE.fireX; x++) put(x, h - 1, PAL.G!)
-  sprite(WOODPILE, STAGE.pileX, STAGE.pileY)
+  // The floor, in the side wall's shadow at the far end
+  for (let x = 0; x < w; x++) put(x, h - 1, x >= w - SIDE_W ? PAL.Z! : PAL.G!)
   drawFireplace(s, tick, sprite, put)
   drawClawd(s, now, sprite, glyphs)
 
@@ -264,20 +262,19 @@ type Put = (x: number, y: number, c: number) => void
 // The fireplace's rows on the stage
 const BED_Y = STAGE.fireY + BED.y
 const LOGS_Y = STAGE.fireY + LOGS_ROW
-const HEARTH_Y = STAGE.fireY + HEARTH_ROW
 
 // The fireplace tells the state: flames by height, then embers, then ash and smoke
 function drawFireplace(s: State, tick: number, sprite: Sprite, put: Put) {
   const fx = STAGE.fireX
   const isLit = s.fire > 0
-  // Firebrick and the hearth in front take the fire's glow
+  // The firebrick and the inner wall take the fire's glow
   const glow = isLit ? 0.25 + 0.45 * s.fire : s.kind === 'cold' ? 0.18 * (1 - s.cold) : 0
   sprite(FIREPLACE, fx, STAGE.fireY, ch => {
     if (ch === 'k') return mix(PAL.k!, 0x8a3a22, glow)
     if (ch === 'D') return mix(PAL.D!, 0x4a1e10, glow * 0.6)
+    if (ch === 'w') return mix(PAL.w!, 0x8b3a2a, glow)
     return PAL[ch]
   })
-  for (let x = BED.x - 1; x < BED.x + BED.w + 1; x++) put(fx + x, HEARTH_Y, mix(PAL.R!, 0xf59e0b, glow * 0.45))
 
   const x0 = fx + BED.x
   if (isLit) {
@@ -299,7 +296,7 @@ function drawFireplace(s: State, tick: number, sprite: Sprite, put: Put) {
     if (s.fire > 0.9 || s.isStoked) {
       for (let k = 0; k < 3; k++) {
         const y = BED_Y - rows - Math.floor(hash(tick, 300 + k) * 2)
-        if (y >= STAGE.fireY + 2 && hash(tick, 100 + k) < 0.6) put(x0 + 1 + Math.floor(hash(tick, 200 + k) * (BED.w - 2)), y, PAL.y!)
+        if (y >= STAGE.fireY + 3 && hash(tick, 100 + k) < 0.6) put(x0 + 1 + Math.floor(hash(tick, 200 + k) * (BED.w - 2)), y, PAL.y!)
       }
     }
     return
@@ -392,13 +389,13 @@ function drawPoke(t: number, sprite: Sprite, glyphs: Glyph[]) {
     return sprite(back ? CLAWD.step : CLAWD.stand, back ? x : 0, y)
   }
   sprite(CLAWD.poke, x, y)
-  // The poker, a wooden stick thinner than his arm: a ─ level from his hand over the woodpile,
-  // then a ╲ down into the fire; a jab pushes it a column in and lights its tip
+  // The poker, a wooden stick thinner than his arm: a straight ─ from his hand into the opening;
+  // a jab pushes it a column in and lights its tip
   const isIn = P_JABS.some(j => t >= j && t < j + P_JAB_MS)
-  const tipX = fireX + BED.x + (isIn ? 1 : 0)
+  const tipX = fireX + BED.x + 2 + (isIn ? 1 : 0)
   const row = (y + 4) / 2
   for (let gx = x + artWidth(CLAWD.poke); gx < tipX; gx++) glyphs.push({ x: gx, row, ch: '─', fg: PAL.L! })
-  glyphs.push({ x: tipX, row: row + 1, ch: '╲', fg: isIn ? PAL.F! : PAL.L! })
+  glyphs.push({ x: tipX, row, ch: '─', fg: isIn ? PAL.F! : PAL.L! })
 }
 
 // One row for a narrow terminal: the bar alone

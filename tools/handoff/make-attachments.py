@@ -102,9 +102,9 @@ def palette():
 
 
 OUT.mkdir(exist_ok=True)
-# tilt-sketch.png is the user's drawing, not generated
+# The sketch, the reference and the mockup are kept, not generated
 for old in OUT.glob('*.png'):
-    if old.name != 'tilt-sketch.png':
+    if old.name not in ('tilt-sketch.png', 'c3-mockup.png', 'reference.png'):
         old.unlink()
 grid([data['fireplace']], 1, 18, 10, cyan_inside=True).save(OUT / 'fireplace.png')
 grid([data['woodpile'], data['log']], 2, 8, 6).save(OUT / 'logs.png')

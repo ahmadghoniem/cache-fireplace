@@ -23,6 +23,12 @@ export const PAL: Record<string, number> = {
   y: 0xfde047, // flame tip, spark
   s: 0x9aa3ad, // smoke
   G: 0x6b7280, // floor
+  Z: 0x40444d, // floor in the side wall's shadow
+  T: 0xb9c2cc, // stone, top face
+  S: 0x39434f, // stone, top of the side wall
+  V: 0x303944, // stone, side wall
+  M: 0x2d3744, // stone, side of the mantel
+  w: 0x5a2a1c, // inner left wall of the opening
 }
 
 export type Art = string[]
@@ -150,31 +156,30 @@ export const SCARF: Art = [
   '..bB',
 ]
 
-// The pile Clawd takes from, and the one log he carries
-export const WOODPILE: Art = [
-  '.LLLW',
-  'LLLLW',
-  'llllW',
-]
+// The one log Clawd carries
 export const LOG: Art = ['LLW', 'llW']
 
-// A stone fireplace, front on: mantel, opening, firebrick, logs on the grate, hearth (14 x 8)
+// A stone fireplace turned to face Clawd (16 x 9): a pale top T, the mantel's front R, the front
+// stone P, and on the right the side wall seen edge-on (S over V, M beside the mantel). The opening
+// has a frame H on its left only; its inner left wall w shows, firebrick behind, logs on its floor.
+// It stands on the floor, which is in its shadow (Z) under the side wall.
 export const FIREPLACE: Art = [
-  'RRRRRRRRRRRRRR',
-  '.HHHHHHHHHHHH.',
-  '.PPRRRRRRRRPH.',
-  '.PRDkkDkkDkRH.',
-  '.PRkDkkDkkDRH.',
-  '.PRDkDkkDkkRH.',
-  '.PRLLWlLLLWRH.',
-  'RRRRRRRRRRRRRR',
+  'TTTTTTTTTTTTTTSS',
+  'RRRRRRRRRRRRRRMM',
+  'PPPPPPPPPPPPPPVV',
+  'PPHwwDkkDkkDPPVV',
+  'PPHwwkDkkDkkPPVV',
+  'PPHwwDkkDkkDPPVV',
+  'PPHwwkkDkkDkPPVV',
+  'PPHwLLWlLLLWPPVV',
+  'PPPPPPPPPPPPPPVV',
 ]
-// Where the fire sits in FIREPLACE: 8 wide over the logs, its base on row 5
-export const BED = { x: 3, y: 5, w: 8 }
+// Where the fire sits in FIREPLACE: 8 wide over the logs, its base on row 6
+export const BED = { x: 4, y: 6, w: 8 }
 // The logs' row, which glows as embers and turns to ash
-export const LOGS_ROW = 6
-// The hearth, which takes the fire's glow
-export const HEARTH_ROW = 7
+export const LOGS_ROW = 7
+// The side wall's columns: the floor under them is in shadow
+export const SIDE_W = 2
 
 // The flame tips of the cooking scene, one per frame; under them a checker of F and f
 export const TIPS = [

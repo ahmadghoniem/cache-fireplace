@@ -63,7 +63,13 @@
     f: 15680580,
     y: 16638023,
     s: 10134445,
-    G: 7041664
+    G: 7041664,
+    Z: 4211789,
+    T: 12174028,
+    S: 3752783,
+    V: 3160388,
+    M: 2963268,
+    w: 5909020
   };
   var artWidth = (art) => Math.max(0, ...art.map((l) => l.length));
   var CLAWD = {
@@ -171,25 +177,21 @@
     "..Bb",
     "..bB"
   ];
-  var WOODPILE = [
-    ".LLLW",
-    "LLLLW",
-    "llllW"
-  ];
   var LOG = ["LLW", "llW"];
   var FIREPLACE = [
-    "RRRRRRRRRRRRRR",
-    ".HHHHHHHHHHHH.",
-    ".PPRRRRRRRRPH.",
-    ".PRDkkDkkDkRH.",
-    ".PRkDkkDkkDRH.",
-    ".PRDkDkkDkkRH.",
-    ".PRLLWlLLLWRH.",
-    "RRRRRRRRRRRRRR"
+    "TTTTTTTTTTTTTTSS",
+    "RRRRRRRRRRRRRRMM",
+    "PPPPPPPPPPPPPPVV",
+    "PPHwwDkkDkkDPPVV",
+    "PPHwwkDkkDkkPPVV",
+    "PPHwwDkkDkkDPPVV",
+    "PPHwwkkDkkDkPPVV",
+    "PPHwLLWlLLLWPPVV",
+    "PPPPPPPPPPPPPPVV"
   ];
-  var BED = { x: 3, y: 5, w: 8 };
-  var LOGS_ROW = 6;
-  var HEARTH_ROW = 7;
+  var BED = { x: 4, y: 6, w: 8 };
+  var LOGS_ROW = 7;
+  var SIDE_W = 2;
   var TIPS = [
     "..F.y..y",
     "y..y.F..",
@@ -333,10 +335,9 @@
   }
   var STAGE = (() => {
     const h = CLAWD.stand.length + 1;
-    const pileX = artWidth(CLAWD.stand) + 1;
-    const fireX = pileX + artWidth(WOODPILE);
+    const fireX = artWidth(CLAWD.stand) + 3;
     const w = fireX + artWidth(FIREPLACE);
-    return { w, h, clawdX: 0, clawdY: 0, pileX, pileY: h - 1 - WOODPILE.length, fireX, fireY: h - FIREPLACE.length };
+    return { w, h, clawdX: 0, clawdY: 0, fireX, fireY: h - 1 - FIREPLACE.length };
   })();
   var GAP = 2;
   var COLUMNS = ROW_COLUMNS + GAP + STAGE.w;
@@ -361,9 +362,8 @@
     };
     const tick = Math.floor(now / FLAME_MS);
     const glyphs = [];
-    for (let x = 0;x < STAGE.fireX; x++)
-      put(x, h - 1, PAL.G);
-    sprite(WOODPILE, STAGE.pileX, STAGE.pileY);
+    for (let x = 0;x < w; x++)
+      put(x, h - 1, x >= w - SIDE_W ? PAL.Z : PAL.G);
     drawFireplace(s, tick, sprite, put);
     drawClawd(s, now, sprite, glyphs);
     const cells = new Uint32Array(COLUMNS * ROWS * 3).fill(0);
@@ -415,7 +415,6 @@
   }
   var BED_Y = STAGE.fireY + BED.y;
   var LOGS_Y = STAGE.fireY + LOGS_ROW;
-  var HEARTH_Y = STAGE.fireY + HEARTH_ROW;
   function drawFireplace(s, tick, sprite, put) {
     const fx = STAGE.fireX;
     const isLit = s.fire > 0;
@@ -425,10 +424,10 @@
         return mix(PAL.k, 9058850, glow);
       if (ch === "D")
         return mix(PAL.D, 4857360, glow * 0.6);
+      if (ch === "w")
+        return mix(PAL.w, 9124394, glow);
       return PAL[ch];
     });
-    for (let x = BED.x - 1;x < BED.x + BED.w + 1; x++)
-      put(fx + x, HEARTH_Y, mix(PAL.R, 16096779, glow * 0.45));
     const x0 = fx + BED.x;
     if (isLit) {
       const rows = s.fire >= 0.75 ? 3 : 2;
@@ -450,7 +449,7 @@
       if (s.fire > 0.9 || s.isStoked) {
         for (let k = 0;k < 3; k++) {
           const y = BED_Y - rows - Math.floor(hash(tick, 300 + k) * 2);
-          if (y >= STAGE.fireY + 2 && hash(tick, 100 + k) < 0.6)
+          if (y >= STAGE.fireY + 3 && hash(tick, 100 + k) < 0.6)
             put(x0 + 1 + Math.floor(hash(tick, 200 + k) * (BED.w - 2)), y, PAL.y);
         }
       }
@@ -552,11 +551,11 @@
     }
     sprite(CLAWD.poke, x, y);
     const isIn = P_JABS.some((j) => t >= j && t < j + P_JAB_MS);
-    const tipX = fireX + BED.x + (isIn ? 1 : 0);
+    const tipX = fireX + BED.x + 2 + (isIn ? 1 : 0);
     const row = (y + 4) / 2;
     for (let gx = x + artWidth(CLAWD.poke);gx < tipX; gx++)
       glyphs.push({ x: gx, row, ch: "─", fg: PAL.L });
-    glyphs.push({ x: tipX, row: row + 1, ch: "╲", fg: isIn ? PAL.F : PAL.L });
+    glyphs.push({ x: tipX, row, ch: "─", fg: isIn ? PAL.F : PAL.L });
   }
   function line(s) {
     const cells = new Uint32Array(ROW_COLUMNS * 3);
